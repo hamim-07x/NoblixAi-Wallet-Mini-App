@@ -1,0 +1,5 @@
+{
+  "name": "NoblixAi Wallet",
+  "description": "A Telegram Mini App Wallet system with token balances, deposit, and withdraw features.",
+  "requestFramePermissions": []
+}

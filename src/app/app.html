@@ -1,0 +1,677 @@
+<div class="max-w-md mx-auto h-[100dvh] flex flex-col bg-[#0a0a0a] text-zinc-50 relative font-sans overflow-hidden">
+  <!-- Premium Background Effects -->
+  <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-[#0a0a0a] to-[#0a0a0a] pointer-events-none"></div>
+  <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent"></div>
+  
+  <!-- Toast Notification -->
+  @if (toastMessage()) {
+    <div class="fixed top-4 left-1/2 -translate-x-1/2 bg-zinc-800/90 backdrop-blur-md text-white px-6 py-3 rounded-full shadow-2xl z-50 text-sm font-medium border border-zinc-700/50 flex items-center gap-2 transition-all whitespace-nowrap">
+      <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+      {{ toastMessage() }}
+    </div>
+  }
+
+  <!-- Content Area -->
+  <main class="flex-1 overflow-y-auto pb-32">
+    
+    <!-- WALLET TAB -->
+    @if (activeTab() === 'wallet') {
+      <!-- Header -->
+      <header class="pt-8 pb-4 px-5 flex justify-between items-center relative z-10 animate-fade-in">
+        <div class="flex items-center gap-4">
+          <div class="relative">
+            <img [src]="telegramUser()?.photo_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix'" alt="Profile" class="w-10 h-10 rounded-full border-2 border-indigo-500/50 p-0.5 object-cover" referrerpolicy="no-referrer">
+            <div class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-zinc-950 rounded-full animate-pulse"></div>
+          </div>
+          <div class="flex flex-col">
+            <div class="flex items-center gap-2">
+              <h1 class="text-base font-bold text-white tracking-tight">NoblixAi Wallet</h1>
+              <span class="bg-indigo-500/20 text-indigo-400 text-[9px] font-extrabold px-2 py-0.5 rounded-full border border-indigo-500/30 tracking-wider">BETA</span>
+            </div>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <span class="text-[9px] text-zinc-500 font-bold bg-zinc-800/80 px-1.5 py-0.5 rounded-md">UID</span>
+              <p class="text-[11px] text-zinc-300 font-mono">{{ telegramUser()?.id || '987654321' }}</p>
+            </div>
+          </div>
+        </div>
+        <button (click)="openNotifications()" class="relative w-9 h-9 rounded-full bg-zinc-900/80 border border-zinc-800/80 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all shadow-lg backdrop-blur-md">
+          <mat-icon class="text-[20px] w-[20px] h-[20px]">notifications</mat-icon>
+          @if (getUnreadCount() > 0) {
+            <div class="absolute top-0 right-0 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-zinc-900"></div>
+          }
+        </button>
+      </header>
+
+      <!-- Balance -->
+      <div class="pt-2 pb-6 px-5 flex flex-col items-center relative animate-slide-up">
+        <!-- subtle glow behind balance -->
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none animate-float"></div>
+        
+        <span class="text-zinc-400 text-[11px] font-bold tracking-widest uppercase mb-1.5">{{ t('total_balance') }}</span>
+        <div class="flex items-center gap-3">
+          <h2 class="text-5xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/50 drop-shadow-sm">
+            {{ isBalanceHidden() ? '****' : (getCurrencySymbol() + (totalBalance() | number:'1.2-2')) }}
+          </h2>
+          <button (click)="toggleBalanceVisibility()" class="text-zinc-500 hover:text-zinc-300 transition-colors">
+            <mat-icon class="text-[18px] w-[18px] h-[18px]">{{ isBalanceHidden() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+        </div>
+        @if (evmWallet()) {
+          <div class="mt-4 flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full backdrop-blur-md cursor-pointer hover:bg-white/10 transition-colors" (click)="copyAddress()">
+            <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+            <span class="text-[10px] font-mono text-zinc-300">{{ evmWallet().address.substring(0, 6) }}...{{ evmWallet().address.substring(38) }}</span>
+            <mat-icon class="text-[12px] w-[12px] h-[12px] text-zinc-500">content_copy</mat-icon>
+          </div>
+        }
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="grid grid-cols-3 gap-3 px-5 mb-8 animate-slide-up" style="animation-delay: 0.1s;">
+        <div class="flex flex-col items-center gap-1.5 group cursor-pointer" (click)="handleAction('Deposit')">
+          <div class="w-12 h-12 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center text-zinc-300 group-hover:text-white group-hover:bg-white/10 group-hover:border-white/20 transition-all shadow-[0_8px_16px_-6px_rgba(0,0,0,0.5)] group-hover:-translate-y-1">
+            <mat-icon class="text-[20px] w-[20px] h-[20px]">add</mat-icon>
+          </div>
+          <span class="text-[10px] font-semibold text-zinc-400 group-hover:text-zinc-200 transition-colors">{{ t('deposit') }}</span>
+        </div>
+        <div class="flex flex-col items-center gap-1.5 group cursor-pointer" (click)="handleAction('Withdraw')">
+          <div class="w-12 h-12 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center text-zinc-300 group-hover:text-white group-hover:bg-white/10 group-hover:border-white/20 transition-all shadow-[0_8px_16px_-6px_rgba(0,0,0,0.5)] group-hover:-translate-y-1">
+            <mat-icon class="text-[20px] w-[20px] h-[20px]">arrow_upward</mat-icon>
+          </div>
+          <span class="text-[10px] font-semibold text-zinc-400 group-hover:text-zinc-200 transition-colors">{{ t('withdraw') }}</span>
+        </div>
+        <div class="flex flex-col items-center gap-1.5 group cursor-pointer" (click)="handleAction('Pay')">
+          <div class="w-12 h-12 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center text-zinc-300 group-hover:text-white group-hover:bg-white/10 group-hover:border-white/20 transition-all shadow-[0_8px_16px_-6px_rgba(0,0,0,0.5)] group-hover:-translate-y-1">
+            <mat-icon class="text-[20px] w-[20px] h-[20px]">qr_code_scanner</mat-icon>
+          </div>
+          <span class="text-[10px] font-semibold text-zinc-400 group-hover:text-zinc-200 transition-colors">{{ t('pay') }}</span>
+        </div>
+      </div>
+
+      <!-- Assets -->
+      <div class="px-5 animate-slide-up" style="animation-delay: 0.2s;">
+        <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">{{ t('your_assets') }}</h3>
+        
+        <div class="flex flex-col gap-3">
+          @for (token of sortedTokens(); track token.id) {
+            <div (click)="selectedToken.set(token)" class="bg-white/5 border border-white/5 rounded-[2rem] p-4 flex items-center justify-between backdrop-blur-xl hover:bg-white/10 transition-colors cursor-pointer group shadow-[0_8px_16px_-6px_rgba(0,0,0,0.3)]">
+              <div class="flex items-center gap-4">
+                @if (token.isCustom) {
+                  <div class="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-lg {{ token.customClass }} shadow-inner group-hover:scale-105 transition-transform">
+                    N
+                  </div>
+                } @else {
+                  <div class="w-11 h-11 rounded-full bg-zinc-800 p-2 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <img [src]="token.imgUrl" alt="{{token.name}}" class="w-full h-full object-contain" referrerpolicy="no-referrer" />
+                  </div>
+                }
+                <div class="flex flex-col">
+                  <span class="font-bold text-[15px] text-zinc-100">{{ token.symbol }}</span>
+                  <div class="flex items-center gap-1.5 mt-0.5">
+                    <span class="text-xs text-zinc-500 font-medium">{{ getCurrencySymbol() }}{{ getConvertedPrice(token.price) | number:'1.2-6' }}</span>
+                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md" 
+                          [class.bg-emerald-500/10]="token.change24h >= 0" [class.text-emerald-400]="token.change24h >= 0"
+                          [class.bg-red-500/10]="token.change24h < 0" [class.text-red-400]="token.change24h < 0">
+                      {{ token.change24h >= 0 ? '+' : '' }}{{ token.change24h | number:'1.2-2' }}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="flex flex-col items-end">
+                <span class="font-bold text-[15px] text-zinc-100">{{ isBalanceHidden() ? '****' : (getCurrencySymbol() + (getConvertedPrice(token.balance * token.price) | number:'1.2-2')) }}</span>
+                <span class="text-xs text-zinc-500 font-medium mt-0.5">{{ isBalanceHidden() ? '****' : (token.balance | number:'1.2-8') }} {{ token.symbol }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- TASK CENTER TAB -->
+    @if (activeTab() === 'tasks') {
+      <div class="px-6 pt-12 pb-8 animate-slide-up">
+        <div class="flex items-center justify-between mb-8">
+          <div>
+            <h2 class="text-3xl font-extrabold text-zinc-100 tracking-tight">{{ t('task_center') }}</h2>
+            <p class="text-sm text-zinc-400 mt-1 font-medium">{{ t('earn_nbx') }}</p>
+          </div>
+          <div class="w-12 h-12 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+            <mat-icon>military_tech</mat-icon>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <div class="flex items-center gap-2 text-zinc-500 text-xs font-bold tracking-wider uppercase mb-3 ml-1">
+            <mat-icon class="text-[14px] w-[14px] h-[14px]">event_note</mat-icon>
+            {{ t('daily_tasks') }}
+          </div>
+          <div class="bg-white/5 rounded-[2rem] p-5 flex items-center justify-between border border-white/5 shadow-[0_8px_16px_-6px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20">
+                <mat-icon>calendar_today</mat-icon>
+              </div>
+              <div>
+                <h4 class="font-bold text-zinc-100">Daily Check-in</h4>
+                <p class="text-emerald-400 text-sm font-semibold mt-0.5">+50 NBX</p>
+              </div>
+            </div>
+            <div class="bg-white/10 px-4 py-2 rounded-full text-xs font-mono font-bold text-zinc-300 border border-white/5">
+              23:45:41
+            </div>
+          </div>
+        </div>
+
+        <div class="flex bg-white/5 backdrop-blur-xl rounded-2xl p-1.5 mb-6 border border-white/5 shadow-[0_8px_16px_-6px_rgba(0,0,0,0.3)]">
+          <button class="flex-1 py-2 rounded-xl bg-white/10 text-white font-bold text-xs shadow-sm border border-white/5">Social</button>
+          <button class="flex-1 py-2 rounded-xl text-zinc-500 font-bold text-xs hover:text-zinc-300 transition-colors">{{ t('referral_tasks') }}</button>
+          <button class="flex-1 py-2 rounded-xl text-zinc-500 font-bold text-xs hover:text-zinc-300 transition-colors">Partner</button>
+        </div>
+
+        <div class="space-y-3">
+          @for (task of tasks(); track task.id) {
+            <div class="bg-white/5 border border-white/5 rounded-[2rem] p-4 flex items-center gap-4 backdrop-blur-xl relative overflow-hidden group hover:bg-white/10 transition-colors shadow-[0_8px_16px_-6px_rgba(0,0,0,0.3)]">
+              @if (task.completed) {
+                <div class="absolute inset-0 bg-emerald-500/5 pointer-events-none"></div>
+              }
+              <div class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors border" 
+                   [class.bg-indigo-500/10]="!task.completed && task.type === 'regular'" [class.border-indigo-500/20]="!task.completed && task.type === 'regular'" [class.text-indigo-400]="!task.completed && task.type === 'regular'"
+                   [class.bg-rose-500/10]="!task.completed && task.type === 'referral'" [class.border-rose-500/20]="!task.completed && task.type === 'referral'" [class.text-rose-400]="!task.completed && task.type === 'referral'"
+                   [class.bg-emerald-500/10]="task.completed" [class.border-emerald-500/20]="task.completed" [class.text-emerald-400]="task.completed">
+                <mat-icon>{{ task.completed ? 'check' : (task.type === 'referral' ? 'group_add' : 'bolt') }}</mat-icon>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h4 class="font-bold text-[13px] text-zinc-100 truncate leading-tight">{{ task.title }}</h4>
+                <p class="text-xs font-bold mt-1" [class.text-emerald-400]="!task.completed" [class.text-zinc-500]="task.completed">{{ task.reward }}</p>
+              </div>
+              <button (click)="task.type === 'referral' ? setTab('friends') : completeTask(task)" 
+                      class="px-5 py-2 rounded-xl text-xs font-bold tracking-wide transition-all shrink-0 shadow-sm"
+                      [class.bg-zinc-100]="!task.completed"
+                      [class.text-zinc-900]="!task.completed"
+                      [class.hover:bg-white]="!task.completed"
+                      [class.bg-zinc-800]="task.completed"
+                      [class.text-zinc-500]="task.completed"
+                      [class.border]="task.completed"
+                      [class.border-zinc-700]="task.completed">
+                {{ task.action }}
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- FRIENDS TAB -->
+    @if (activeTab() === 'friends') {
+      <div class="px-5 pt-8 pb-6 animate-slide-up">
+        <div class="flex items-center justify-between mb-8">
+          <div>
+            <h2 class="text-2xl font-extrabold text-zinc-100 tracking-tight">{{ t('invite_friends') }}</h2>
+            <p class="text-sm text-zinc-400 mt-1 font-medium">{{ t('earn_per_referral') }}</p>
+          </div>
+          <div class="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+            <mat-icon>group_add</mat-icon>
+          </div>
+        </div>
+
+        <div class="bg-white/5 border border-white/10 rounded-[2rem] p-6 relative overflow-hidden mb-6 shadow-[0_8px_16px_-6px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl -mr-10 -mt-10"></div>
+          <h2 class="text-zinc-400 font-medium text-sm mb-3">{{ t('referral_link') }}</h2>
+          <div class="bg-black/20 rounded-2xl p-4 border border-white/5 flex justify-between items-center mb-4">
+            <p class="text-zinc-300 font-mono text-xs truncate mr-4">https://t.me/NoblixBot?start={{ telegramUser()?.id || 'demo' }}</p>
+            <button (click)="copyReferralLink()" class="bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-4 py-2 rounded-xl font-bold text-xs hover:bg-indigo-500/30 transition-colors shrink-0">
+              {{ t('copy_link') }}
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-white/5 border border-white/5 rounded-[2rem] p-5 backdrop-blur-xl shadow-[0_8px_16px_-6px_rgba(0,0,0,0.3)]">
+          <h3 class="text-sm font-bold text-zinc-300 mb-4">{{ t('referrals') }} ({{ friendsList().length }})</h3>
+          
+          <div class="flex flex-col gap-3">
+            @if (friendsList().length === 0) {
+              <div class="text-center py-6 text-zinc-500 text-sm font-medium">
+                No friends invited yet.
+              </div>
+            } @else {
+              @for (friend of friendsList(); track friend.id) {
+                <div class="flex items-center p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                  <img [src]="friend.avatar" alt="Avatar" class="w-10 h-10 rounded-full bg-zinc-800" referrerpolicy="no-referrer">
+                  <div class="flex-1 ml-4">
+                    <span class="font-bold text-sm text-zinc-100 block">{{ friend.name }}</span>
+                    <span class="text-[10px] text-zinc-500 font-medium">{{ friend.joinedAt }}</span>
+                  </div>
+                  <div class="font-bold text-sm text-emerald-400">
+                    {{ friend.reward }}
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- LEADERBOARD TAB -->
+    @if (activeTab() === 'leaderboard') {
+      <div class="px-5 pt-8 pb-6 animate-slide-up">
+        <div class="flex items-center justify-between mb-8">
+          <div>
+            <h2 class="text-2xl font-extrabold text-zinc-100 tracking-tight">{{ t('leaderboard') }}</h2>
+            <p class="text-sm text-zinc-400 mt-1 font-medium">{{ t('top_earners') }}</p>
+          </div>
+          <div class="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+            <mat-icon>leaderboard</mat-icon>
+          </div>
+        </div>
+
+        <div class="bg-white/5 border border-white/5 rounded-[2rem] p-5 backdrop-blur-xl shadow-[0_8px_16px_-6px_rgba(0,0,0,0.3)]">
+          <div class="flex items-center justify-between text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-4 px-2">
+            <span>{{ t('rank') }}</span>
+            <span class="flex-1 ml-6">{{ t('user') }}</span>
+            <span>{{ t('points') }}</span>
+          </div>
+          
+          <div class="flex flex-col gap-3">
+            @for (user of leaderboard(); track user.id) {
+              <div class="flex items-center p-3 rounded-2xl transition-colors" [class.bg-white/10]="user.isCurrentUser" [class.border]="user.isCurrentUser" [class.border-white/20]="user.isCurrentUser" [class.shadow-[0_4px_12px_-4px_rgba(0,0,0,0.3)]]="user.isCurrentUser">
+                <div class="w-6 text-center font-bold text-sm" [class.text-amber-400]="user.id === 1" [class.text-zinc-300]="user.id === 2" [class.text-amber-600]="user.id === 3" [class.text-zinc-500]="user.id > 3">
+                  #{{ user.id }}
+                </div>
+                <div class="flex-1 flex items-center gap-3 ml-4">
+                  <img [src]="user.avatar" alt="Avatar" class="w-8 h-8 rounded-full bg-zinc-800" referrerpolicy="no-referrer">
+                  <span class="font-bold text-sm" [class.text-zinc-100]="!user.isCurrentUser" [class.text-indigo-400]="user.isCurrentUser">{{ user.name }}</span>
+                </div>
+                <div class="font-mono font-bold text-sm text-emerald-400">
+                  {{ user.points | number }}
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- PROFILE TAB -->
+    @if (activeTab() === 'profile') {
+      <div class="px-6 pt-12 pb-8 animate-slide-up">
+        <div class="flex flex-col items-center mb-10">
+          <div class="relative">
+            <div class="w-28 h-28 rounded-full p-1 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-400 mb-4 shadow-lg shadow-indigo-500/20">
+              <img [src]="telegramUser()?.photo_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix'" alt="Profile" class="w-full h-full rounded-full border-4 border-zinc-950 object-cover" referrerpolicy="no-referrer" />
+            </div>
+            <div class="absolute bottom-5 right-0 w-7 h-7 bg-emerald-500 rounded-full border-[3px] border-zinc-950 flex items-center justify-center">
+              <mat-icon class="text-white text-[16px] w-[16px] h-[16px]">verified</mat-icon>
+            </div>
+          </div>
+          <h2 class="text-3xl font-extrabold text-zinc-100 tracking-tight">{{ telegramUser()?.first_name || t('demo_user') }} {{ telegramUser()?.last_name || '' }}</h2>
+          <p class="text-indigo-400 font-medium mb-4">{{ telegramUser()?.username ? '@' + telegramUser()?.username : t('no_username') }}</p>
+          
+          <div class="w-full bg-white/5 rounded-[2rem] p-5 border border-white/5 flex flex-col gap-3 shadow-[0_8px_16px_-6px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+            <div class="flex justify-between items-center">
+              <span class="text-zinc-500 text-sm font-medium">Telegram UID</span>
+              <span class="text-zinc-300 font-mono text-sm">{{ telegramUser()?.id || '987654321' }}</span>
+            </div>
+            @if (evmWallet()) {
+              <div class="flex justify-between items-center">
+                <span class="text-zinc-500 text-sm font-medium">Wallet Address</span>
+                <div class="flex items-center gap-2">
+                  <span class="text-zinc-300 font-mono text-xs">{{ evmWallet().address.substring(0, 6) }}...{{ evmWallet().address.substring(38) }}</span>
+                  <button (click)="copyAddress()" class="text-indigo-400 hover:text-indigo-300"><mat-icon class="text-[14px] w-[14px] h-[14px]">content_copy</mat-icon></button>
+                </div>
+              </div>
+            }
+            <div class="flex justify-between items-center">
+              <span class="text-zinc-500 text-sm font-medium">{{ t('account_status') }}</span>
+              <span class="text-emerald-400 font-bold text-sm flex items-center gap-1"><mat-icon class="text-[14px] w-[14px] h-[14px]">verified</mat-icon> {{ t('verified') }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-8">
+          <div>
+            <h3 class="text-[11px] font-bold text-zinc-500 uppercase tracking-widest ml-4 mb-3">{{ t('settings') }}</h3>
+            <div class="bg-white/5 border border-white/5 rounded-[2rem] overflow-hidden backdrop-blur-xl shadow-[0_8px_16px_-6px_rgba(0,0,0,0.3)]">
+              <div class="flex items-center justify-between p-5 border-b border-white/5">
+                <div class="flex items-center gap-4">
+                  <div class="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
+                    <mat-icon class="text-[20px] w-[20px] h-[20px]">notifications</mat-icon>
+                  </div>
+                  <span class="font-bold text-zinc-200 text-sm">{{ t('push_notifications') }}</span>
+                </div>
+                <button (click)="toggleSetting('notifications')" class="w-12 h-6 rounded-full transition-colors relative" [class.bg-indigo-500]="notificationsEnabled()" [class.bg-zinc-700]="!notificationsEnabled()">
+                  <div class="absolute top-1 w-4 h-4 rounded-full bg-white transition-transform" [class.translate-x-7]="notificationsEnabled()" [class.translate-x-1]="!notificationsEnabled()"></div>
+                </button>
+              </div>
+              <div class="flex items-center justify-between p-5 border-b border-white/5">
+                <div class="flex items-center gap-4">
+                  <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+                    <mat-icon class="text-[20px] w-[20px] h-[20px]">fingerprint</mat-icon>
+                  </div>
+                  <span class="font-bold text-zinc-200 text-sm">{{ t('biometric_login') }}</span>
+                </div>
+                <button (click)="toggleSetting('biometrics')" class="w-12 h-6 rounded-full transition-colors relative" [class.bg-indigo-500]="biometricsEnabled()" [class.bg-zinc-700]="!biometricsEnabled()">
+                  <div class="absolute top-1 w-4 h-4 rounded-full bg-white transition-transform" [class.translate-x-7]="biometricsEnabled()" [class.translate-x-1]="!biometricsEnabled()"></div>
+                </button>
+              </div>
+              <button (click)="handleWalletAction('Language')" class="w-full flex items-center justify-between p-5 border-b border-white/5 hover:bg-white/10 transition-colors group">
+                <div class="flex items-center gap-4">
+                  <div class="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20 group-hover:scale-105 transition-transform">
+                    <mat-icon class="text-[20px] w-[20px] h-[20px]">language</mat-icon>
+                  </div>
+                  <span class="font-bold text-zinc-200 text-sm">{{ t('language') }}</span>
+                </div>
+                <div class="flex items-center gap-2 text-zinc-500">
+                  <span class="text-sm">{{ currentLanguage() === 'en' ? 'English' : 'हिंदी' }}</span>
+                  <mat-icon>chevron_right</mat-icon>
+                </div>
+              </button>
+              <button (click)="openAdminPanel()" class="w-full flex items-center justify-between p-5 hover:bg-white/10 transition-colors group">
+                <div class="flex items-center gap-4">
+                  <div class="w-10 h-10 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center border border-rose-500/20 group-hover:scale-105 transition-transform">
+                    <mat-icon class="text-[20px] w-[20px] h-[20px]">admin_panel_settings</mat-icon>
+                  </div>
+                  <span class="font-bold text-zinc-200 text-sm">{{ t('admin_panel') }}</span>
+                </div>
+                <div class="flex items-center gap-2 text-zinc-500">
+                  <mat-icon>chevron_right</mat-icon>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </main>
+
+  <!-- Floating Bottom Navigation -->
+  <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[380px] bg-[#141414]/80 backdrop-blur-2xl border border-white/10 rounded-[2rem] flex justify-between items-center px-2 py-2 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] z-40" [class.hidden]="selectedToken() || showAdminPanel()">
+    <button (click)="setTab('wallet')" class="flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl transition-all duration-300 relative" [class.bg-white/10]="activeTab() === 'wallet'" [class.text-white]="activeTab() === 'wallet'" [class.text-zinc-500]="activeTab() !== 'wallet'">
+      <mat-icon class="text-[22px] w-[22px] h-[22px]">account_balance_wallet</mat-icon>
+      <span class="text-[10px] font-bold tracking-wide">{{ t('wallet') }}</span>
+      @if (activeTab() === 'wallet') { <div class="absolute -bottom-1 w-1 h-1 rounded-full bg-indigo-400"></div> }
+    </button>
+    
+    <button (click)="setTab('tasks')" class="flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl transition-all duration-300 relative" [class.bg-white/10]="activeTab() === 'tasks'" [class.text-white]="activeTab() === 'tasks'" [class.text-zinc-500]="activeTab() !== 'tasks'">
+      <div class="relative">
+        <mat-icon class="text-[22px] w-[22px] h-[22px]">format_list_bulleted</mat-icon>
+        <div class="absolute -top-1 -right-2 bg-indigo-500 text-white text-[9px] font-bold px-1.5 rounded-full border-2 border-zinc-900">13</div>
+      </div>
+      <span class="text-[10px] font-bold tracking-wide">{{ t('tasks') }}</span>
+      @if (activeTab() === 'tasks') { <div class="absolute -bottom-1 w-1 h-1 rounded-full bg-indigo-400"></div> }
+    </button>
+    
+    <button (click)="setTab('friends')" class="flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl transition-all duration-300 relative" [class.bg-white/10]="activeTab() === 'friends'" [class.text-white]="activeTab() === 'friends'" [class.text-zinc-500]="activeTab() !== 'friends'">
+      <mat-icon class="text-[22px] w-[22px] h-[22px]">group</mat-icon>
+      <span class="text-[10px] font-bold tracking-wide">{{ t('friends') }}</span>
+      @if (activeTab() === 'friends') { <div class="absolute -bottom-1 w-1 h-1 rounded-full bg-indigo-400"></div> }
+    </button>
+
+    <button (click)="setTab('leaderboard')" class="flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl transition-all duration-300 relative" [class.bg-white/10]="activeTab() === 'leaderboard'" [class.text-white]="activeTab() === 'leaderboard'" [class.text-zinc-500]="activeTab() !== 'leaderboard'">
+      <mat-icon class="text-[22px] w-[22px] h-[22px]">leaderboard</mat-icon>
+      <span class="text-[10px] font-bold tracking-wide">{{ t('leaderboard') }}</span>
+      @if (activeTab() === 'leaderboard') { <div class="absolute -bottom-1 w-1 h-1 rounded-full bg-indigo-400"></div> }
+    </button>
+    
+    <button (click)="setTab('profile')" class="flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl transition-all duration-300 relative" [class.bg-white/10]="activeTab() === 'profile'" [class.text-white]="activeTab() === 'profile'" [class.text-zinc-500]="activeTab() !== 'profile'">
+      <mat-icon class="text-[22px] w-[22px] h-[22px]">person</mat-icon>
+      <span class="text-[10px] font-bold tracking-wide">{{ t('profile') }}</span>
+      @if (activeTab() === 'profile') { <div class="absolute -bottom-1 w-1 h-1 rounded-full bg-indigo-400"></div> }
+    </button>
+  </nav>
+
+  <!-- Token Details Overlay -->
+  @if (selectedToken()) {
+    <div class="fixed inset-0 z-50 bg-[#0a0a0a] flex flex-col animate-[slideIn_0.3s_ease-out]">
+      <!-- Premium Background Effects -->
+      <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-[#0a0a0a] to-[#0a0a0a] pointer-events-none"></div>
+      
+      <!-- Header -->
+      <div class="flex items-center justify-between p-5 border-b border-white/5 bg-white/5 backdrop-blur-xl relative z-10">
+        <button (click)="selectedToken.set(null); showReceiveQR.set(false)" class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-zinc-300 hover:text-white hover:bg-white/10 transition-colors shadow-sm">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <h2 class="text-base font-bold text-zinc-100 tracking-tight">{{ selectedToken().name }}</h2>
+        <div class="w-10 h-10"></div> <!-- Spacer for centering -->
+      </div>
+
+      <!-- Content -->
+      <div class="flex-1 overflow-y-auto pb-8 relative z-10">
+        <!-- Balance & Chart Area -->
+        <div class="p-6 flex flex-col items-center relative">
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+          
+          @if (selectedToken().isCustom) {
+            <div class="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-2xl {{ selectedToken().customClass }} shadow-lg mb-4 border-2 border-white/10">
+              N
+            </div>
+          } @else {
+            <div class="w-16 h-16 rounded-full bg-zinc-800 p-3 flex items-center justify-center mb-4 shadow-lg border-2 border-white/10">
+              <img [src]="selectedToken().imgUrl" alt="{{selectedToken().name}}" class="w-full h-full object-contain" referrerpolicy="no-referrer" />
+            </div>
+          }
+          
+          <h3 class="text-3xl font-extrabold text-white tracking-tight mb-1">{{ selectedToken().balance | number:'1.2-8' }} <span class="text-xl text-zinc-400">{{ selectedToken().symbol }}</span></h3>
+          <div class="flex items-center gap-2">
+            <span class="text-zinc-400 font-medium text-sm">{{ getCurrencySymbol() }}{{ getConvertedPrice(selectedToken().price) | number:'1.2-6' }}</span>
+            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md" 
+                  [class.bg-emerald-500/10]="selectedToken().change24h >= 0" [class.text-emerald-400]="selectedToken().change24h >= 0"
+                  [class.bg-red-500/10]="selectedToken().change24h < 0" [class.text-red-400]="selectedToken().change24h < 0">
+              {{ selectedToken().change24h >= 0 ? '+' : '' }}{{ selectedToken().change24h | number:'1.2-2' }}%
+            </span>
+          </div>
+
+          <!-- Mock Chart -->
+          <div class="w-full mt-8 bg-white/5 border border-white/5 rounded-[2rem] p-4 backdrop-blur-xl shadow-[0_8px_16px_-6px_rgba(0,0,0,0.3)]">
+            <div class="flex justify-between items-center mb-4 px-2">
+              <button class="text-[10px] font-bold px-3 py-1 rounded-full transition-colors" [class.bg-white/10]="tokenTab() === '1H'" [class.text-white]="tokenTab() === '1H'" [class.text-zinc-500]="tokenTab() !== '1H'" (click)="tokenTab.set('1H')">1H</button>
+              <button class="text-[10px] font-bold px-3 py-1 rounded-full transition-colors" [class.bg-white/10]="tokenTab() === '24H'" [class.text-white]="tokenTab() === '24H'" [class.text-zinc-500]="tokenTab() !== '24H'" (click)="tokenTab.set('24H')">24H</button>
+              <button class="text-[10px] font-bold px-3 py-1 rounded-full transition-colors" [class.bg-white/10]="tokenTab() === '7D'" [class.text-white]="tokenTab() === '7D'" [class.text-zinc-500]="tokenTab() !== '7D'" (click)="tokenTab.set('7D')">7D</button>
+            </div>
+            <div class="h-24 flex items-end justify-between gap-1 px-2">
+              <!-- Simple CSS bars for mock chart -->
+              <div class="w-full bg-indigo-500/20 rounded-t-sm" style="height: 40%"></div>
+              <div class="w-full bg-indigo-500/40 rounded-t-sm" style="height: 60%"></div>
+              <div class="w-full bg-indigo-500/30 rounded-t-sm" style="height: 50%"></div>
+              <div class="w-full bg-indigo-500/60 rounded-t-sm" style="height: 80%"></div>
+              <div class="w-full bg-indigo-500/50 rounded-t-sm" style="height: 70%"></div>
+              <div class="w-full bg-indigo-500/80 rounded-t-sm" style="height: 90%"></div>
+              <div class="w-full bg-indigo-500 rounded-t-sm" style="height: 100%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons inside Token -->
+        <div class="grid grid-cols-2 gap-3 px-6 mb-6">
+          <button (click)="handleAction('Send')" class="bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold py-3 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-sm backdrop-blur-md">
+            <mat-icon class="text-[18px] w-[18px] h-[18px]">arrow_upward</mat-icon>
+            <span class="text-xs">{{ t('send') }}</span>
+          </button>
+          <button (click)="showReceiveQR.set(true)" class="bg-indigo-500/20 border border-indigo-500/30 hover:bg-indigo-500/30 text-indigo-400 font-bold py-3 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-sm backdrop-blur-md">
+            <mat-icon class="text-[18px] w-[18px] h-[18px]">arrow_downward</mat-icon>
+            <span class="text-xs">{{ t('receive') }}</span>
+          </button>
+        </div>
+
+        <!-- Receive QR Overlay -->
+        @if (showReceiveQR()) {
+          <div class="px-6 mb-6 animate-slide-up">
+            <div class="bg-white/5 border border-white/10 rounded-[2rem] p-6 flex flex-col items-center backdrop-blur-xl shadow-[0_8px_16px_-6px_rgba(0,0,0,0.3)]">
+              <h4 class="text-sm font-bold text-zinc-300 mb-4">Receive {{ selectedToken().symbol }}</h4>
+              <div class="bg-white p-2 rounded-2xl mb-4">
+                <!-- QR Code -->
+                <img [src]="'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + (selectedToken().id === 'eth' && evmWallet() ? evmWallet().address : (telegramUser()?.username || telegramUser()?.id || 'demo'))" alt="QR Code" class="w-32 h-32" referrerpolicy="no-referrer">
+              </div>
+              <p class="text-xs text-zinc-500 font-mono text-center break-all bg-black/20 p-3 rounded-xl border border-white/5">
+                {{ selectedToken().id === 'eth' && evmWallet() ? evmWallet().address : (telegramUser()?.username ? '@' + telegramUser()?.username : telegramUser()?.id) }}
+              </p>
+              <button (click)="showReceiveQR.set(false)" class="mt-4 text-xs font-bold text-zinc-400 hover:text-white transition-colors">Close</button>
+            </div>
+          </div>
+        }
+
+        <!-- Transaction History -->
+        <div class="px-6">
+          <div class="flex items-center justify-between mb-4 px-2">
+            <h4 class="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">{{ t('transaction_history') }}</h4>
+          </div>
+          
+          <div class="flex flex-col gap-3">
+            @for (tx of getTokenTransactions(selectedToken().id); track tx.id) {
+              <div class="bg-white/5 border border-white/5 rounded-2xl p-3 flex items-center justify-between backdrop-blur-xl shadow-sm">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+                    <mat-icon class="text-[18px] w-[18px] h-[18px]">arrow_downward</mat-icon>
+                  </div>
+                  <div>
+                    <p class="text-sm font-bold text-zinc-200">Received</p>
+                    <p class="text-[10px] text-zinc-500 font-medium">{{ tx.date | date:'short' }}</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <p class="text-sm font-bold text-emerald-400">+{{ tx.amount }} {{ selectedToken().symbol }}</p>
+                  <p class="text-[10px] text-zinc-500 font-medium">Completed</p>
+                </div>
+              </div>
+            } @empty {
+              <div class="text-center py-8 bg-white/5 border border-white/5 rounded-[2rem] backdrop-blur-xl">
+                <mat-icon class="text-zinc-600 mb-2 text-3xl w-8 h-8">receipt_long</mat-icon>
+                <p class="text-zinc-500 text-xs font-medium">{{ t('no_transactions') }}</p>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Notifications Overlay -->
+  @if (showNotifications()) {
+    <div class="fixed inset-0 z-50 bg-[#0a0a0a] flex flex-col animate-[slideIn_0.3s_ease-out]">
+      <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-[#0a0a0a] to-[#0a0a0a] pointer-events-none"></div>
+      
+      <div class="flex items-center justify-between p-5 border-b border-white/5 bg-white/5 backdrop-blur-xl relative z-10">
+        <button (click)="closeNotifications()" class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-zinc-300 hover:text-white hover:bg-white/10 transition-colors shadow-sm">
+          <mat-icon>close</mat-icon>
+        </button>
+        <h2 class="text-base font-bold text-zinc-100 tracking-tight">Notifications</h2>
+        <div class="w-10 h-10"></div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-5 relative z-10">
+        <div class="flex flex-col gap-3">
+          @for (notif of notifications(); track notif.id) {
+            <div class="bg-white/5 border border-white/5 rounded-[2rem] p-4 backdrop-blur-xl shadow-[0_8px_16px_-6px_rgba(0,0,0,0.3)]">
+              <div class="flex justify-between items-start mb-2">
+                <h4 class="font-bold text-sm text-zinc-100">{{ notif.title }}</h4>
+                <span class="text-[10px] text-zinc-500 font-medium">{{ notif.date | date:'shortTime' }}</span>
+              </div>
+              <p class="text-xs text-zinc-400 leading-relaxed">{{ notif.message }}</p>
+            </div>
+          } @empty {
+            <div class="text-center py-10">
+              <mat-icon class="text-zinc-600 mb-3 text-4xl w-10 h-10">notifications_off</mat-icon>
+              <p class="text-zinc-500 text-sm font-medium">No notifications yet</p>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Withdraw Modal -->
+  @if (showWithdrawModal()) {
+    <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+      <div class="bg-zinc-900 border border-white/10 rounded-[2rem] w-full max-w-sm p-6 shadow-2xl animate-slide-up">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-lg font-bold text-white">Withdraw ETH</h3>
+          <button (click)="showWithdrawModal.set(false)" class="text-zinc-500 hover:text-white transition-colors">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <div class="mb-4">
+          <label class="block text-xs font-bold text-zinc-400 mb-2">Destination Address</label>
+          <input type="text" [value]="withdrawAddress()" (input)="withdrawAddress.set($any($event.target).value)" placeholder="0x..." class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
+        </div>
+        <div class="mb-6">
+          <label class="block text-xs font-bold text-zinc-400 mb-2">Amount (ETH)</label>
+          <input type="number" [value]="withdrawAmount()" (input)="withdrawAmount.set($any($event.target).value)" placeholder="0.00" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
+        </div>
+        <button (click)="withdrawEvm()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-indigo-500/20">
+          Confirm Withdrawal
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Admin Panel Overlay -->
+  @if (showAdminPanel()) {
+    <div class="fixed inset-0 z-50 bg-[#0a0a0a] flex flex-col animate-[slideIn_0.3s_ease-out]">
+      <!-- Premium Background Effects -->
+      <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-rose-900/20 via-[#0a0a0a] to-[#0a0a0a] pointer-events-none"></div>
+      <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-rose-500/20 to-transparent"></div>
+
+      <!-- Header -->
+      <div class="flex items-center justify-between p-6 border-b border-white/5 bg-white/5 backdrop-blur-xl relative z-10">
+        <button (click)="closeAdminPanel()" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-zinc-300 hover:text-white hover:bg-white/10 transition-colors border border-white/5">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <h2 class="text-lg font-bold text-zinc-100">{{ t('admin_panel') }}</h2>
+        <div class="w-10 h-10"></div> <!-- Spacer for centering -->
+      </div>
+
+      <!-- Admin Tabs -->
+      <div class="flex bg-white/5 backdrop-blur-xl p-1.5 border-b border-white/5 relative z-10">
+        <button (click)="setAdminTab('tasks')" class="flex-1 py-2 rounded-xl font-bold text-xs transition-colors" [class.bg-white/10]="adminTab() === 'tasks'" [class.text-white]="adminTab() === 'tasks'" [class.text-zinc-500]="adminTab() !== 'tasks'">Tasks</button>
+        <button (click)="setAdminTab('users')" class="flex-1 py-2 rounded-xl font-bold text-xs transition-colors" [class.bg-white/10]="adminTab() === 'users'" [class.text-white]="adminTab() === 'users'" [class.text-zinc-500]="adminTab() !== 'users'">Users</button>
+        <button (click)="setAdminTab('notifications')" class="flex-1 py-2 rounded-xl font-bold text-xs transition-colors" [class.bg-white/10]="adminTab() === 'notifications'" [class.text-white]="adminTab() === 'notifications'" [class.text-zinc-500]="adminTab() !== 'notifications'">Notify</button>
+      </div>
+
+      <!-- Admin Content -->
+      <div class="flex-1 overflow-y-auto p-6 relative z-10">
+        @if (adminTab() === 'tasks') {
+          <div class="mb-8">
+            <h3 class="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-4">Add New Task</h3>
+            <div class="flex flex-col gap-3 bg-white/5 border border-white/5 rounded-[2rem] p-5 backdrop-blur-xl shadow-[0_8px_16px_-6px_rgba(0,0,0,0.3)]">
+              <input type="text" [value]="newTaskTitle()" (input)="updateNewTaskTitle($event)" placeholder="Task Title (e.g., Join Telegram)" class="w-full bg-black/20 border border-white/5 rounded-xl py-3 px-4 text-white placeholder:text-zinc-600 focus:outline-none focus:border-rose-500/50 transition-colors">
+              <input type="text" [value]="newTaskReward()" (input)="updateNewTaskReward($event)" placeholder="Reward (e.g., +50 NBX)" class="w-full bg-black/20 border border-white/5 rounded-xl py-3 px-4 text-white placeholder:text-zinc-600 focus:outline-none focus:border-rose-500/50 transition-colors">
+              <button (click)="addTask()" class="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-rose-500/20">Add Task</button>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-4">Manage Tasks</h3>
+            <div class="flex flex-col gap-3">
+              @for (task of tasks(); track task.id) {
+                <div class="bg-white/5 border border-white/5 rounded-[2rem] p-4 flex items-center justify-between backdrop-blur-xl shadow-[0_8px_16px_-6px_rgba(0,0,0,0.3)]">
+                  <div>
+                    <h4 class="font-bold text-zinc-200 text-sm">{{ task.title }}</h4>
+                    <p class="text-emerald-400 text-xs font-semibold mt-0.5">{{ task.reward }}</p>
+                  </div>
+                  <button (click)="removeTask(task.id)" class="w-8 h-8 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center border border-red-500/20 hover:bg-red-500/20 transition-colors">
+                    <mat-icon class="text-[18px] w-[18px] h-[18px]">delete</mat-icon>
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        @if (adminTab() === 'users') {
+          <div class="flex flex-col items-center justify-center py-20 opacity-50">
+            <mat-icon class="text-zinc-600 text-5xl mb-3">group</mat-icon>
+            <p class="text-zinc-500 text-sm font-medium text-center">User database connection<br>is currently paused.</p>
+          </div>
+        }
+
+        @if (adminTab() === 'notifications') {
+          <div>
+            <h3 class="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-4">Send Notification</h3>
+            <div class="flex flex-col gap-3 bg-white/5 border border-white/5 rounded-[2rem] p-5 backdrop-blur-xl shadow-[0_8px_16px_-6px_rgba(0,0,0,0.3)]">
+              <textarea placeholder="Type your message here..." rows="4" class="w-full bg-black/20 border border-white/5 rounded-xl py-3 px-4 text-white placeholder:text-zinc-600 focus:outline-none focus:border-rose-500/50 transition-colors resize-none"></textarea>
+              <button (click)="sendNotification()" class="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-rose-500/20">Send to All Users</button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
