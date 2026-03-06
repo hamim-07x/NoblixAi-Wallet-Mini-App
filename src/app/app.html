@@ -498,10 +498,10 @@
               <h4 class="text-sm font-bold text-zinc-300 mb-4">Receive {{ selectedToken().symbol }}</h4>
               <div class="bg-white p-2 rounded-2xl mb-4">
                 <!-- QR Code -->
-                <img [src]="'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + (selectedToken().id === 'eth' && evmWallet() ? evmWallet().address : (telegramUser()?.username || telegramUser()?.id || 'demo'))" alt="QR Code" class="w-32 h-32" referrerpolicy="no-referrer">
+                <img [src]="'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + (selectedToken().id !== 'nbx' && evmWallet() ? evmWallet().address : (telegramUser()?.username || telegramUser()?.id || 'demo'))" alt="QR Code" class="w-32 h-32" referrerpolicy="no-referrer">
               </div>
               <p class="text-xs text-zinc-500 font-mono text-center break-all bg-black/20 p-3 rounded-xl border border-white/5">
-                {{ selectedToken().id === 'eth' && evmWallet() ? evmWallet().address : (telegramUser()?.username ? '@' + telegramUser()?.username : telegramUser()?.id) }}
+                {{ selectedToken().id !== 'nbx' && evmWallet() ? evmWallet().address : (telegramUser()?.username ? '@' + telegramUser()?.username : telegramUser()?.id) }}
               </p>
               <button (click)="showReceiveQR.set(false)" class="mt-4 text-xs font-bold text-zinc-400 hover:text-white transition-colors">Close</button>
             </div>
@@ -582,21 +582,76 @@
     <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
       <div class="bg-zinc-900 border border-white/10 rounded-[2rem] w-full max-w-sm p-6 shadow-2xl animate-slide-up">
         <div class="flex justify-between items-center mb-6">
-          <h3 class="text-lg font-bold text-white">Withdraw ETH</h3>
+          <h3 class="text-lg font-bold text-white">Withdraw {{ selectedToken()?.symbol }}</h3>
           <button (click)="showWithdrawModal.set(false)" class="text-zinc-500 hover:text-white transition-colors">
             <mat-icon>close</mat-icon>
           </button>
         </div>
         <div class="mb-4">
           <label class="block text-xs font-bold text-zinc-400 mb-2">Destination Address</label>
-          <input type="text" [value]="withdrawAddress()" (input)="withdrawAddress.set($any($event.target).value)" placeholder="0x..." class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
+          <input type="text" [value]="withdrawAddress()" (input)="withdrawAddress.set($any($event.target).value); onWithdrawInput()" placeholder="0x..." class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
         </div>
-        <div class="mb-6">
-          <label class="block text-xs font-bold text-zinc-400 mb-2">Amount (ETH)</label>
-          <input type="number" [value]="withdrawAmount()" (input)="withdrawAmount.set($any($event.target).value)" placeholder="0.00" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
+        <div class="mb-4">
+          <label class="block text-xs font-bold text-zinc-400 mb-2">Amount ({{ selectedToken()?.symbol }})</label>
+          <input type="number" [value]="withdrawAmount()" (input)="withdrawAmount.set($any($event.target).value); onWithdrawInput()" placeholder="0.00" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
         </div>
-        <button (click)="withdrawEvm()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-indigo-500/20">
+        
+        <div class="mb-6 bg-black/20 rounded-xl p-3 border border-white/5">
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-xs text-zinc-500">Network Fee</span>
+            <span class="text-xs font-mono text-zinc-300">
+              @if (isEstimatingGas()) {
+                <span class="animate-pulse">Estimating...</span>
+              } @else {
+                ~{{ estimatedGasFee() }} ETH
+              }
+            </span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-zinc-400">Total Amount</span>
+            <span class="text-sm font-bold text-white">{{ withdrawAmount() || '0' }} {{ selectedToken()?.symbol }}</span>
+          </div>
+        </div>
+
+        <button (click)="withdrawEvm()" [disabled]="isEstimatingGas() || !withdrawAddress() || !withdrawAmount()" class="w-full bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-indigo-500/20">
           Confirm Withdrawal
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- NBX Transfer Modal -->
+  @if (showNbxTransferModal()) {
+    <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+      <div class="bg-zinc-900 border border-white/10 rounded-[2rem] w-full max-w-sm p-6 shadow-2xl animate-slide-up">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-lg font-bold text-white">Pay NBX</h3>
+          <button (click)="showNbxTransferModal.set(false)" class="text-zinc-500 hover:text-white transition-colors">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <div class="mb-4">
+          <label class="block text-xs font-bold text-zinc-400 mb-2">Recipient Telegram ID</label>
+          <input type="text" [value]="nbxTransferToId()" (input)="nbxTransferToId.set($any($event.target).value)" placeholder="e.g. 123456789" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
+        </div>
+        <div class="mb-4">
+          <label class="block text-xs font-bold text-zinc-400 mb-2">Amount (NBX)</label>
+          <input type="number" [value]="nbxTransferAmount() || ''" (input)="nbxTransferAmount.set($any($event.target).value)" placeholder="0.00" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
+        </div>
+        
+        <div class="mb-6 bg-black/20 rounded-xl p-3 border border-white/5">
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-xs text-zinc-500">Network Fee</span>
+            <span class="text-xs font-mono text-emerald-400">0 NBX (Internal)</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-zinc-400">Total Amount</span>
+            <span class="text-sm font-bold text-white">{{ nbxTransferAmount() || '0' }} NBX</span>
+          </div>
+        </div>
+
+        <button (click)="transferNbx()" [disabled]="!nbxTransferToId() || !nbxTransferAmount()" class="w-full bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-indigo-500/20">
+          Confirm Payment
         </button>
       </div>
     </div>

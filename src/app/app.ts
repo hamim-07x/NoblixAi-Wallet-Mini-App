@@ -45,6 +45,13 @@ export class App implements OnInit, OnDestroy {
   showWithdrawModal = signal(false);
   withdrawAddress = signal('');
   withdrawAmount = signal('');
+  
+  showNbxTransferModal = signal(false);
+  nbxTransferToId = signal('');
+  nbxTransferAmount = signal<number | null>(null);
+  estimatedGasFee = signal<string>('0.00');
+  isEstimatingGas = signal(false);
+  
   evmWallet = signal<any>(null);
   private priceInterval: any;
   
@@ -363,7 +370,8 @@ export class App implements OnInit, OnDestroy {
         body: JSON.stringify({
           telegramId: this.telegramUser().id.toString(),
           toAddress: this.withdrawAddress(),
-          amount: this.withdrawAmount()
+          amount: this.withdrawAmount(),
+          tokenSymbol: this.selectedToken()?.symbol
         })
       });
       
@@ -436,24 +444,101 @@ export class App implements OnInit, OnDestroy {
     this.activeTab.set(tab);
   }
 
-  handleAction(action: string) {
-    if (action === 'Withdraw' || action === 'Send') {
-      if (this.selectedToken() && this.selectedToken().id !== 'eth') {
-        this.showToast(`Withdrawals for ${this.selectedToken().symbol} are coming soon!`);
+  handleAction(action: string, token?: any) {
+    let targetToken = token || this.selectedToken();
+    if (!targetToken) {
+      if (action === 'Pay') {
+        targetToken = this.tokens().find(t => t.id === 'nbx');
+      } else {
+        // Default to ETH for general actions if no token is selected
+        targetToken = this.tokens().find(t => t.id === 'eth');
+      }
+    }
+    
+    if (action === 'Withdraw' || action === 'Send' || action === 'Pay') {
+      if (targetToken && targetToken.id === 'nbx') {
+        this.selectedToken.set(targetToken);
+        this.showNbxTransferModal.set(true);
         return;
       }
+      this.selectedToken.set(targetToken);
       this.showWithdrawModal.set(true);
       return;
     }
+    
     if (action === 'Deposit' || action === 'Receive') {
-      const ethToken = this.tokens().find(t => t.id === 'eth');
-      if (ethToken) {
-        this.selectedToken.set(ethToken);
-        this.showReceiveQR.set(true);
-      }
+      this.selectedToken.set(targetToken);
+      this.showReceiveQR.set(true);
       return;
     }
+    
     this.showToast(`${action} feature coming soon!`);
+  }
+
+  async estimateGas() {
+    if (!this.withdrawAddress() || !this.withdrawAmount()) {
+      this.estimatedGasFee.set('0.00');
+      return;
+    }
+    this.isEstimatingGas.set(true);
+    try {
+      const response = await fetch('/api/wallet/estimate-gas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          toAddress: this.withdrawAddress(),
+          amount: this.withdrawAmount()
+        })
+      });
+      const data = await response.json();
+      this.estimatedGasFee.set(data.feeEth || '0.00');
+    } catch (e) {
+      this.estimatedGasFee.set('0.000021');
+    } finally {
+      this.isEstimatingGas.set(false);
+    }
+  }
+
+  onWithdrawInput() {
+    // Debounce gas estimation
+    if ((window as any).gasTimeout) clearTimeout((window as any).gasTimeout);
+    (window as any).gasTimeout = setTimeout(() => {
+      this.estimateGas();
+    }, 500);
+  }
+
+  async transferNbx() {
+    if (!this.nbxTransferToId() || !this.nbxTransferAmount()) {
+      this.showToast('Please enter Telegram ID and Amount');
+      return;
+    }
+    
+    this.showToast('Processing transfer...');
+    try {
+      const response = await fetch('/api/wallet/transfer-nbx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fromTelegramId: this.telegramUser().id.toString(),
+          toTelegramId: this.nbxTransferToId(),
+          amount: this.nbxTransferAmount()
+        })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        this.showToast('NBX Transfer successful!');
+        this.showNbxTransferModal.set(false);
+        this.nbxTransferToId.set('');
+        this.nbxTransferAmount.set(null);
+        this.tokens.update(tokens => tokens.map(t => t.id === 'nbx' ? { ...t, balance: data.newBalance } : t));
+        this.calculateTotalBalance();
+      } else {
+        this.showToast(data.error || 'Transfer failed');
+      }
+    } catch (e) {
+      this.showToast('Network error during transfer');
+    }
   }
 
   async completeTask(task: any) {
