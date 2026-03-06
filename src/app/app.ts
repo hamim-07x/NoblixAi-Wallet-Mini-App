@@ -34,13 +34,23 @@ export class App implements OnInit, OnDestroy {
   biometricsEnabled = signal(false);
   isBalanceHidden = signal(false);
   currentLanguage = signal('en');
+  showLanguageModal = signal(false);
+  languages = [
+    { code: 'en', name: 'English' },
+    { code: 'bn', name: 'Bengali' },
+    { code: 'hi', name: 'Hindi' },
+    { code: 'ru', name: 'Russian' }
+  ];
   currentCurrency = signal('USD');
   showAdminPanel = signal(false);
   adminTab = signal('tasks');
   newTaskTitle = signal('');
   newTaskReward = signal('');
   newTaskType = signal('regular');
+  newNotificationTitle = signal('');
+  newNotificationMessage = signal('');
   showNotifications = signal(false);
+  notifications = signal<any[]>([]);
   tokenTab = signal('1H');
   showReceiveQR = signal(false);
   showWithdrawModal = signal(false);
@@ -60,10 +70,6 @@ export class App implements OnInit, OnDestroy {
   
   exchangeRates = { USD: 1, EUR: 0.92, INR: 83.5, BDT: 110.0 };
   currencySymbols = { USD: '$', EUR: '€', INR: '₹', BDT: '৳' };
-
-  notifications = signal([
-    { id: 1, title: 'Welcome to NoblixAi!', message: 'Start completing tasks to earn NBX.', date: new Date(), read: false }
-  ]);
 
   translations: Record<string, Record<string, string>> = {
     en: {
@@ -263,6 +269,7 @@ export class App implements OnInit, OnDestroy {
 
   async ngOnInit() {
     await this.initTelegramUser();
+    this.fetchNotifications();
     this.fetchLivePrices();
     this.priceInterval = setInterval(() => {
       this.fetchLivePrices();
@@ -275,6 +282,54 @@ export class App implements OnInit, OnDestroy {
   ngOnDestroy() {
     if (this.priceInterval) {
       clearInterval(this.priceInterval);
+    }
+  }
+
+  async fetchNotifications() {
+    try {
+      const response = await fetch('/api/notifications');
+      if (response.ok) {
+        const data = await response.json();
+        this.notifications.set(data);
+      }
+    } catch (e) {
+      console.error('Failed to fetch notifications', e);
+    }
+  }
+
+  async createNotification() {
+    if (!this.newNotificationTitle() || !this.newNotificationMessage()) return;
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: this.newNotificationTitle(),
+          message: this.newNotificationMessage()
+        })
+      });
+      if (response.ok) {
+        this.newNotificationTitle.set('');
+        this.newNotificationMessage.set('');
+        this.fetchNotifications();
+        this.showToast('Notification sent');
+      }
+    } catch (e) {
+      console.error('Failed to create notification', e);
+    }
+  }
+
+  async deleteNotification(id: string) {
+    try {
+      const response = await fetch(`/api/notifications/${id}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        this.fetchNotifications();
+        this.showToast('Notification deleted');
+      }
+    } catch (e) {
+      console.error('Failed to delete notification', e);
     }
   }
 
@@ -638,11 +693,7 @@ export class App implements OnInit, OnDestroy {
 
   handleWalletAction(action: string) {
     if (action === 'Language') {
-      const langs = ['en', 'hi', 'bn', 'ru'];
-      const currentIndex = langs.indexOf(this.currentLanguage());
-      const nextIndex = (currentIndex + 1) % langs.length;
-      this.currentLanguage.set(langs[nextIndex]);
-      this.showToast(`Language changed to ${langs[nextIndex].toUpperCase()}`);
+      this.showLanguageModal.set(true);
       return;
     }
     if (action === 'Currency') {

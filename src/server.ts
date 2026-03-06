@@ -44,14 +44,15 @@ const DB_FILE = join(process.cwd(), 'wallet_db.json');
 
 function readDB() {
   if (!fs.existsSync(DB_FILE)) {
-    return { users: {}, user_tasks: {}, wallets: {} };
+    return { users: {}, user_tasks: {}, wallets: {}, notifications: [] };
   }
   try {
     const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
     if (!data.wallets) data.wallets = {};
+    if (!data.notifications) data.notifications = [];
     return data;
   } catch (e) {
-    return { users: {}, user_tasks: {}, wallets: {} };
+    return { users: {}, user_tasks: {}, wallets: {}, notifications: [] };
   }
 }
 
@@ -60,6 +61,42 @@ function writeDB(data: any) {
 }
 
 app.use(express.json());
+
+// API: Get Notifications
+app.get('/api/notifications', (req, res) => {
+  const db = readDB();
+  res.json(db.notifications || []);
+});
+
+// API: Create Notification (Admin)
+app.post('/api/notifications', (req, res) => {
+  const { title, message } = req.body;
+  if (!title || !message) {
+    res.status(400).json({ error: 'Title and message required' });
+    return;
+  }
+  const newNotification = {
+    id: Date.now().toString(),
+    title,
+    message,
+    date: new Date().toISOString()
+  };
+  const db = readDB();
+  if (!db.notifications) db.notifications = [];
+  db.notifications.unshift(newNotification);
+  writeDB(db);
+  res.json(newNotification);
+});
+
+// API: Delete Notification (Admin)
+app.delete('/api/notifications/:id', (req, res) => {
+  const { id } = req.params;
+  const db = readDB();
+  if (!db.notifications) db.notifications = [];
+  db.notifications = db.notifications.filter((n: any) => n.id !== id);
+  writeDB(db);
+  res.json({ success: true });
+});
 
 // API: Authenticate Telegram User
 app.post('/api/auth', (req, res) => {

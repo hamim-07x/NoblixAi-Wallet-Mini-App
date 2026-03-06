@@ -250,171 +250,242 @@
       </div>
     }
 
-    <!-- LEADERBOARD TAB -->
-    @if (activeTab() === 'leaderboard') {
-      <div class="px-5 pt-8 pb-6 animate-slide-up">
+    <!-- EXCHANGE TAB -->
+    @if (activeTab() === 'exchange') {
+      <div class="px-5 pt-8 pb-24 animate-slide-up">
         <div class="flex items-center justify-between mb-8">
           <div>
-            <h2 class="text-2xl font-extrabold text-zinc-100 tracking-tight">{{ t('leaderboard') }}</h2>
-            <p class="text-sm text-zinc-400 mt-1 font-medium">{{ t('top_earners') }}</p>
+            <h2 class="text-2xl font-extrabold text-zinc-100 tracking-tight">Exchange</h2>
+            <p class="text-sm text-zinc-400 mt-1 font-medium">Trade your tokens</p>
           </div>
-          <div class="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
-            <mat-icon>leaderboard</mat-icon>
+          <div class="w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+            <mat-icon>candlestick_chart</mat-icon>
           </div>
         </div>
+        
+        <div class="flex flex-col items-center justify-center py-20 opacity-50">
+          <mat-icon class="text-zinc-600 text-5xl mb-3">construction</mat-icon>
+          <p class="text-zinc-500 text-sm font-medium text-center">Exchange functionality<br>is coming soon.</p>
+        </div>
+      </div>
+    }
 
-        <div class="bg-white/5 border border-white/5 rounded-[2rem] p-5 backdrop-blur-xl shadow-[0_8px_16px_-6px_rgba(0,0,0,0.3)]">
-          <div class="flex items-center justify-between text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-4 px-2">
-            <span>{{ t('rank') }}</span>
-            <span class="flex-1 ml-6">{{ t('user') }}</span>
-            <span>{{ t('points') }}</span>
+    <!-- MARKETPLACE TAB -->
+    @if (activeTab() === 'marketplace') {
+      <div class="px-5 pt-8 pb-24 animate-slide-up">
+        <div class="flex items-center justify-between mb-8">
+          <div>
+            <h2 class="text-2xl font-extrabold text-zinc-100 tracking-tight">P2P Market</h2>
+            <p class="text-sm text-zinc-400 mt-1 font-medium">Buy and sell tokens</p>
           </div>
-          
-          <div class="flex flex-col gap-3">
-            @for (user of leaderboard(); track user.id) {
-              <div class="flex items-center p-3 rounded-2xl transition-colors" [class.bg-white/10]="user.isCurrentUser" [class.border]="user.isCurrentUser" [class.border-white/20]="user.isCurrentUser" [class.shadow-[0_4px_12px_-4px_rgba(0,0,0,0.3)]]="user.isCurrentUser">
-                <div class="w-6 text-center font-bold text-sm" [class.text-amber-400]="user.id === 1" [class.text-zinc-300]="user.id === 2" [class.text-amber-600]="user.id === 3" [class.text-zinc-500]="user.id > 3">
-                  #{{ user.id }}
-                </div>
-                <div class="flex-1 flex items-center gap-3 ml-4">
-                  <img [src]="user.avatar" alt="Avatar" class="w-8 h-8 rounded-full bg-zinc-800" referrerpolicy="no-referrer">
-                  <span class="font-bold text-sm" [class.text-zinc-100]="!user.isCurrentUser" [class.text-indigo-400]="user.isCurrentUser">{{ user.name }}</span>
-                </div>
-                <div class="font-mono font-bold text-sm text-emerald-400">
-                  {{ user.points | number }}
-                </div>
-              </div>
-            }
+          <div class="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+            <mat-icon>storefront</mat-icon>
           </div>
+        </div>
+        
+        <div class="flex flex-col items-center justify-center py-20 opacity-50">
+          <mat-icon class="text-zinc-600 text-5xl mb-3">construction</mat-icon>
+          <p class="text-zinc-500 text-sm font-medium text-center">P2P Marketplace<br>is coming soon.</p>
         </div>
       </div>
     }
 
     <!-- PROFILE TAB -->
     @if (activeTab() === 'profile') {
-      <div class="px-6 pt-12 pb-8 animate-slide-up">
-        <div class="flex flex-col items-center mb-10">
-          <div class="relative">
-            <div class="w-28 h-28 rounded-full p-1 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-400 mb-4 shadow-lg shadow-indigo-500/20">
-              <img [src]="telegramUser()?.photo_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix'" alt="Profile" class="w-full h-full rounded-full border-4 border-zinc-950 object-cover" referrerpolicy="no-referrer" />
-            </div>
-            <div class="absolute bottom-5 right-0 w-7 h-7 bg-emerald-500 rounded-full border-[3px] border-zinc-950 flex items-center justify-center">
-              <mat-icon class="text-white text-[16px] w-[16px] h-[16px]">verified</mat-icon>
-            </div>
-          </div>
-          <h2 class="text-3xl font-extrabold text-zinc-100 tracking-tight">{{ telegramUser()?.first_name || t('demo_user') }} {{ telegramUser()?.last_name || '' }}</h2>
-          <p class="text-indigo-400 font-medium mb-4">{{ telegramUser()?.username ? '@' + telegramUser()?.username : t('no_username') }}</p>
-          
-          <div class="w-full bg-white/5 rounded-[2rem] p-5 border border-white/5 flex flex-col gap-3 shadow-[0_8px_16px_-6px_rgba(0,0,0,0.3)] backdrop-blur-xl">
-            <div class="flex justify-between items-center">
-              <span class="text-zinc-500 text-sm font-medium">Telegram UID</span>
-              <span class="text-zinc-300 font-mono text-sm">{{ telegramUser()?.id || '987654321' }}</span>
-            </div>
-            @if (evmWallet()) {
-              <div class="flex justify-between items-center">
-                <span class="text-zinc-500 text-sm font-medium">Wallet Address</span>
-                <div class="flex items-center gap-2">
-                  <span class="text-zinc-300 font-mono text-xs">{{ evmWallet().address.substring(0, 6) }}...{{ evmWallet().address.substring(38) }}</span>
-                  <button (click)="copyAddress()" class="text-indigo-400 hover:text-indigo-300"><mat-icon class="text-[14px] w-[14px] h-[14px]">content_copy</mat-icon></button>
-                </div>
+      <div class="px-4 pt-8 pb-24 animate-slide-up">
+        <h2 class="text-2xl font-bold text-white mb-6">Settings</h2>
+
+        <!-- Settings Group 1 -->
+        <div class="bg-[#1c1c1e] rounded-2xl mb-4 overflow-hidden">
+          <button (click)="handleWalletAction('Language')" class="w-full flex items-center justify-between p-4 border-b border-white/5 hover:bg-white/5 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                <mat-icon class="text-orange-500 text-[18px] w-[18px] h-[18px]">translate</mat-icon>
               </div>
-            }
-            <div class="flex justify-between items-center">
-              <span class="text-zinc-500 text-sm font-medium">{{ t('account_status') }}</span>
-              <span class="text-emerald-400 font-bold text-sm flex items-center gap-1"><mat-icon class="text-[14px] w-[14px] h-[14px]">verified</mat-icon> {{ t('verified') }}</span>
+              <span class="text-sm font-medium text-zinc-200">Language</span>
             </div>
-          </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-zinc-500">{{ currentLanguage() === 'en' ? 'English' : currentLanguage() === 'bn' ? 'Bengali' : currentLanguage() === 'hi' ? 'Hindi' : 'Russian' }}</span>
+              <mat-icon class="text-zinc-600 text-[18px] w-[18px] h-[18px]">chevron_right</mat-icon>
+            </div>
+          </button>
+          <button class="w-full flex items-center justify-between p-4 border-b border-white/5 hover:bg-white/5 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                <mat-icon class="text-blue-500 text-[18px] w-[18px] h-[18px]">attach_money</mat-icon>
+              </div>
+              <span class="text-sm font-medium text-zinc-200">Wallet Currency</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-zinc-500">USD</span>
+              <mat-icon class="text-zinc-600 text-[18px] w-[18px] h-[18px]">chevron_right</mat-icon>
+            </div>
+          </button>
+          <button class="w-full flex items-center justify-between p-4 border-b border-white/5 hover:bg-white/5 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                <mat-icon class="text-green-500 text-[18px] w-[18px] h-[18px]">schedule</mat-icon>
+              </div>
+              <span class="text-sm font-medium text-zinc-200">Time Zone</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-zinc-500">UTC+6</span>
+              <mat-icon class="text-zinc-600 text-[18px] w-[18px] h-[18px]">chevron_right</mat-icon>
+            </div>
+          </button>
+          <button class="w-full flex items-center justify-between p-4 border-b border-white/5 hover:bg-white/5 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                <mat-icon class="text-purple-500 text-[18px] w-[18px] h-[18px]">dark_mode</mat-icon>
+              </div>
+              <span class="text-sm font-medium text-zinc-200">Theme</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-zinc-500">Auto</span>
+              <mat-icon class="text-zinc-600 text-[18px] w-[18px] h-[18px]">chevron_right</mat-icon>
+            </div>
+          </button>
+          <button class="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-orange-400/20 flex items-center justify-center">
+                <mat-icon class="text-orange-400 text-[18px] w-[18px] h-[18px]">tune</mat-icon>
+              </div>
+              <span class="text-sm font-medium text-zinc-200">Exchange Settings</span>
+            </div>
+            <mat-icon class="text-zinc-600 text-[18px] w-[18px] h-[18px]">chevron_right</mat-icon>
+          </button>
         </div>
 
-        <div class="space-y-8">
-          <div>
-            <h3 class="text-[11px] font-bold text-zinc-500 uppercase tracking-widest ml-4 mb-3">{{ t('settings') }}</h3>
-            <div class="bg-white/5 border border-white/5 rounded-[2rem] overflow-hidden backdrop-blur-xl shadow-[0_8px_16px_-6px_rgba(0,0,0,0.3)]">
-              <div class="flex items-center justify-between p-5 border-b border-white/5">
-                <div class="flex items-center gap-4">
-                  <div class="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
-                    <mat-icon class="text-[20px] w-[20px] h-[20px]">notifications</mat-icon>
-                  </div>
-                  <span class="font-bold text-zinc-200 text-sm">{{ t('push_notifications') }}</span>
-                </div>
-                <button (click)="toggleSetting('notifications')" class="w-12 h-6 rounded-full transition-colors relative" [class.bg-indigo-500]="notificationsEnabled()" [class.bg-zinc-700]="!notificationsEnabled()">
-                  <div class="absolute top-1 w-4 h-4 rounded-full bg-white transition-transform" [class.translate-x-7]="notificationsEnabled()" [class.translate-x-1]="!notificationsEnabled()"></div>
-                </button>
+        <!-- Connected Wallets -->
+        <div class="bg-[#1c1c1e] rounded-2xl mb-2 overflow-hidden">
+          <button class="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                <mat-icon class="text-red-500 text-[18px] w-[18px] h-[18px]">link</mat-icon>
               </div>
-              <div class="flex items-center justify-between p-5 border-b border-white/5">
-                <div class="flex items-center gap-4">
-                  <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
-                    <mat-icon class="text-[20px] w-[20px] h-[20px]">fingerprint</mat-icon>
-                  </div>
-                  <span class="font-bold text-zinc-200 text-sm">{{ t('biometric_login') }}</span>
-                </div>
-                <button (click)="toggleSetting('biometrics')" class="w-12 h-6 rounded-full transition-colors relative" [class.bg-indigo-500]="biometricsEnabled()" [class.bg-zinc-700]="!biometricsEnabled()">
-                  <div class="absolute top-1 w-4 h-4 rounded-full bg-white transition-transform" [class.translate-x-7]="biometricsEnabled()" [class.translate-x-1]="!biometricsEnabled()"></div>
-                </button>
-              </div>
-              <button (click)="handleWalletAction('Language')" class="w-full flex items-center justify-between p-5 border-b border-white/5 hover:bg-white/10 transition-colors group">
-                <div class="flex items-center gap-4">
-                  <div class="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20 group-hover:scale-105 transition-transform">
-                    <mat-icon class="text-[20px] w-[20px] h-[20px]">language</mat-icon>
-                  </div>
-                  <span class="font-bold text-zinc-200 text-sm">{{ t('language') }}</span>
-                </div>
-                <div class="flex items-center gap-2 text-zinc-500">
-                  <span class="text-sm">{{ currentLanguage() === 'en' ? 'English' : 'हिंदी' }}</span>
-                  <mat-icon>chevron_right</mat-icon>
-                </div>
-              </button>
-              <button (click)="openAdminPanel()" class="w-full flex items-center justify-between p-5 hover:bg-white/10 transition-colors group">
-                <div class="flex items-center gap-4">
-                  <div class="w-10 h-10 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center border border-rose-500/20 group-hover:scale-105 transition-transform">
-                    <mat-icon class="text-[20px] w-[20px] h-[20px]">admin_panel_settings</mat-icon>
-                  </div>
-                  <span class="font-bold text-zinc-200 text-sm">{{ t('admin_panel') }}</span>
-                </div>
-                <div class="flex items-center gap-2 text-zinc-500">
-                  <mat-icon>chevron_right</mat-icon>
-                </div>
-              </button>
+              <span class="text-sm font-medium text-zinc-200">Connected Wallets</span>
             </div>
-          </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-zinc-500">1</span>
+              <mat-icon class="text-zinc-600 text-[18px] w-[18px] h-[18px]">chevron_right</mat-icon>
+            </div>
+          </button>
+        </div>
+        <p class="text-xs text-zinc-500 mb-6 px-2">You can link your TON wallet to withdraw funds directly to it.</p>
+
+        <!-- Invoices & Cheques -->
+        <div class="bg-[#1c1c1e] rounded-2xl mb-4 overflow-hidden">
+          <button class="w-full flex items-center justify-between p-4 border-b border-white/5 hover:bg-white/5 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-yellow-500/20 flex items-center justify-center">
+                <mat-icon class="text-yellow-500 text-[18px] w-[18px] h-[18px]">receipt</mat-icon>
+              </div>
+              <span class="text-sm font-medium text-zinc-200">Invoices</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-zinc-600">Launch Bot</span>
+              <mat-icon class="text-zinc-600 text-[18px] w-[18px] h-[18px]">chevron_right</mat-icon>
+            </div>
+          </button>
+          <button class="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-zinc-500/20 flex items-center justify-center">
+                <mat-icon class="text-zinc-400 text-[18px] w-[18px] h-[18px]">star</mat-icon>
+              </div>
+              <span class="text-sm font-medium text-zinc-200">Cheques</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-zinc-600">Launch Bot</span>
+              <mat-icon class="text-zinc-600 text-[18px] w-[18px] h-[18px]">chevron_right</mat-icon>
+            </div>
+          </button>
+        </div>
+
+        <!-- Referral Link -->
+        <div class="bg-[#1c1c1e] rounded-2xl mb-4 overflow-hidden">
+          <button class="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                <mat-icon class="text-red-500 text-[18px] w-[18px] h-[18px]">person_add</mat-icon>
+              </div>
+              <span class="text-sm font-medium text-zinc-200">Referral Link</span>
+            </div>
+            <mat-icon class="text-zinc-600 text-[18px] w-[18px] h-[18px]">content_copy</mat-icon>
+          </button>
+        </div>
+
+        <!-- Support -->
+        <div class="bg-[#1c1c1e] rounded-2xl mb-6 overflow-hidden">
+          <button class="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                <mat-icon class="text-orange-500 text-[18px] w-[18px] h-[18px]">support</mat-icon>
+              </div>
+              <span class="text-sm font-medium text-zinc-200">Support</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-zinc-600">Launch Bot</span>
+              <mat-icon class="text-zinc-600 text-[18px] w-[18px] h-[18px]">chevron_right</mat-icon>
+            </div>
+          </button>
+        </div>
+
+        <!-- Policies -->
+        <div class="bg-[#1c1c1e] rounded-2xl overflow-hidden">
+          <button class="w-full flex items-center justify-between p-4 border-b border-white/5 hover:bg-white/5 transition-colors">
+            <span class="text-sm font-medium text-blue-500">Anti-Money Laundering Policy</span>
+            <mat-icon class="text-zinc-600 text-[18px] w-[18px] h-[18px]">chevron_right</mat-icon>
+          </button>
+          <button class="w-full flex items-center justify-between p-4 border-b border-white/5 hover:bg-white/5 transition-colors">
+            <span class="text-sm font-medium text-blue-500">Privacy Policy</span>
+            <mat-icon class="text-zinc-600 text-[18px] w-[18px] h-[18px]">chevron_right</mat-icon>
+          </button>
+          <button class="w-full flex items-center justify-between p-4 border-b border-white/5 hover:bg-white/5 transition-colors">
+            <span class="text-sm font-medium text-blue-500">Terms of Use</span>
+            <mat-icon class="text-zinc-600 text-[18px] w-[18px] h-[18px]">chevron_right</mat-icon>
+          </button>
+          <button class="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors">
+            <span class="text-sm font-medium text-blue-500">Site terms of use</span>
+            <mat-icon class="text-zinc-600 text-[18px] w-[18px] h-[18px]">chevron_right</mat-icon>
+          </button>
+        </div>
+        
+        <!-- Admin Panel Button -->
+        <div class="mt-6">
+          <button (click)="openAdminPanel()" class="w-full flex items-center justify-center gap-2 p-4 bg-rose-500/10 text-rose-400 rounded-2xl hover:bg-rose-500/20 transition-colors">
+            <mat-icon class="text-[20px] w-[20px] h-[20px]">admin_panel_settings</mat-icon>
+            <span class="font-bold text-sm">{{ t('admin_panel') }}</span>
+          </button>
         </div>
       </div>
     }
   </main>
 
   <!-- Floating Bottom Navigation -->
-  <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[380px] bg-[#141414]/80 backdrop-blur-2xl border border-white/10 rounded-[2rem] flex justify-between items-center px-2 py-2 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] z-40" [class.hidden]="selectedToken() || showAdminPanel()">
-    <button (click)="setTab('wallet')" class="flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl transition-all duration-300 relative" [class.bg-white/10]="activeTab() === 'wallet'" [class.text-white]="activeTab() === 'wallet'" [class.text-zinc-500]="activeTab() !== 'wallet'">
-      <mat-icon class="text-[22px] w-[22px] h-[22px]">account_balance_wallet</mat-icon>
-      <span class="text-[10px] font-bold tracking-wide">{{ t('wallet') }}</span>
-      @if (activeTab() === 'wallet') { <div class="absolute -bottom-1 w-1 h-1 rounded-full bg-indigo-400"></div> }
+  <nav class="fixed bottom-0 left-0 right-0 bg-[#141414] border-t border-white/5 flex justify-between items-center px-2 py-1 pb-safe z-40" [class.hidden]="selectedToken() || showAdminPanel()">
+    <button (click)="setTab('wallet')" class="flex-1 flex flex-col items-center gap-1 py-2 transition-all duration-300" [class.text-blue-500]="activeTab() === 'wallet'" [class.text-zinc-500]="activeTab() !== 'wallet'">
+      <mat-icon class="text-[24px] w-[24px] h-[24px]">account_balance_wallet</mat-icon>
+      <span class="text-[10px] font-medium">Wallet</span>
     </button>
     
-    <button (click)="setTab('tasks')" class="flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl transition-all duration-300 relative" [class.bg-white/10]="activeTab() === 'tasks'" [class.text-white]="activeTab() === 'tasks'" [class.text-zinc-500]="activeTab() !== 'tasks'">
-      <div class="relative">
-        <mat-icon class="text-[22px] w-[22px] h-[22px]">format_list_bulleted</mat-icon>
-        <div class="absolute -top-1 -right-2 bg-indigo-500 text-white text-[9px] font-bold px-1.5 rounded-full border-2 border-zinc-900">13</div>
-      </div>
-      <span class="text-[10px] font-bold tracking-wide">{{ t('tasks') }}</span>
-      @if (activeTab() === 'tasks') { <div class="absolute -bottom-1 w-1 h-1 rounded-full bg-indigo-400"></div> }
-    </button>
-    
-    <button (click)="setTab('friends')" class="flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl transition-all duration-300 relative" [class.bg-white/10]="activeTab() === 'friends'" [class.text-white]="activeTab() === 'friends'" [class.text-zinc-500]="activeTab() !== 'friends'">
-      <mat-icon class="text-[22px] w-[22px] h-[22px]">group</mat-icon>
-      <span class="text-[10px] font-bold tracking-wide">{{ t('friends') }}</span>
-      @if (activeTab() === 'friends') { <div class="absolute -bottom-1 w-1 h-1 rounded-full bg-indigo-400"></div> }
+    <button (click)="setTab('exchange')" class="flex-1 flex flex-col items-center gap-1 py-2 transition-all duration-300" [class.text-blue-500]="activeTab() === 'exchange'" [class.text-zinc-500]="activeTab() !== 'exchange'">
+      <mat-icon class="text-[24px] w-[24px] h-[24px]">candlestick_chart</mat-icon>
+      <span class="text-[10px] font-medium">Exchange</span>
     </button>
 
-    <button (click)="setTab('leaderboard')" class="flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl transition-all duration-300 relative" [class.bg-white/10]="activeTab() === 'leaderboard'" [class.text-white]="activeTab() === 'leaderboard'" [class.text-zinc-500]="activeTab() !== 'leaderboard'">
-      <mat-icon class="text-[22px] w-[22px] h-[22px]">leaderboard</mat-icon>
-      <span class="text-[10px] font-bold tracking-wide">{{ t('leaderboard') }}</span>
-      @if (activeTab() === 'leaderboard') { <div class="absolute -bottom-1 w-1 h-1 rounded-full bg-indigo-400"></div> }
+    <button (click)="setTab('marketplace')" class="flex-1 flex flex-col items-center gap-1 py-2 transition-all duration-300" [class.text-blue-500]="activeTab() === 'marketplace'" [class.text-zinc-500]="activeTab() !== 'marketplace'">
+      <mat-icon class="text-[24px] w-[24px] h-[24px]">storefront</mat-icon>
+      <span class="text-[10px] font-medium">P2P</span>
     </button>
     
-    <button (click)="setTab('profile')" class="flex-1 flex flex-col items-center gap-1 py-2 rounded-2xl transition-all duration-300 relative" [class.bg-white/10]="activeTab() === 'profile'" [class.text-white]="activeTab() === 'profile'" [class.text-zinc-500]="activeTab() !== 'profile'">
-      <mat-icon class="text-[22px] w-[22px] h-[22px]">person</mat-icon>
-      <span class="text-[10px] font-bold tracking-wide">{{ t('profile') }}</span>
-      @if (activeTab() === 'profile') { <div class="absolute -bottom-1 w-1 h-1 rounded-full bg-indigo-400"></div> }
+    <button (click)="setTab('tasks')" class="flex-1 flex flex-col items-center gap-1 py-2 transition-all duration-300" [class.text-blue-500]="activeTab() === 'tasks'" [class.text-zinc-500]="activeTab() !== 'tasks'">
+      <mat-icon class="text-[24px] w-[24px] h-[24px]">monetization_on</mat-icon>
+      <span class="text-[10px] font-medium">Earn</span>
+    </button>
+    
+    <button (click)="setTab('profile')" class="flex-1 flex flex-col items-center gap-1 py-2 transition-all duration-300" [class.text-blue-500]="activeTab() === 'profile'" [class.text-zinc-500]="activeTab() !== 'profile'">
+      <mat-icon class="text-[24px] w-[24px] h-[24px]">menu</mat-icon>
+      <span class="text-[10px] font-medium">Menu</span>
     </button>
   </nav>
 
@@ -571,6 +642,37 @@
               <mat-icon class="text-zinc-600 mb-3 text-4xl w-10 h-10">notifications_off</mat-icon>
               <p class="text-zinc-500 text-sm font-medium">No notifications yet</p>
             </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Language Modal -->
+  @if (showLanguageModal()) {
+    <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+      <div class="bg-[#141414] border border-white/10 rounded-[2rem] w-full max-w-sm p-6 shadow-2xl animate-slide-up">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-lg font-bold text-white">Language</h3>
+          <button (click)="showLanguageModal.set(false)" class="text-zinc-500 hover:text-white transition-colors">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <div class="flex flex-col gap-2">
+          @for (lang of languages; track lang.code) {
+            <button (click)="currentLanguage.set(lang.code); showLanguageModal.set(false); showToast('Language changed to ' + lang.name)" 
+                    class="flex items-center justify-between p-4 rounded-2xl transition-colors border border-transparent hover:bg-white/5"
+                    [class.bg-white/5]="currentLanguage() === lang.code"
+                    [class.border-white/10]="currentLanguage() === lang.code">
+              <span class="text-sm font-medium text-zinc-200">{{ lang.name }}</span>
+              @if (currentLanguage() === lang.code) {
+                <div class="w-5 h-5 rounded-full border-2 border-indigo-500 flex items-center justify-center">
+                  <div class="w-2.5 h-2.5 rounded-full bg-indigo-500"></div>
+                </div>
+              } @else {
+                <div class="w-5 h-5 rounded-full border-2 border-zinc-700"></div>
+              }
+            </button>
           }
         </div>
       </div>
@@ -754,8 +856,26 @@
           <div>
             <h3 class="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-4">Send Notification</h3>
             <div class="flex flex-col gap-3 bg-white/5 border border-white/5 rounded-[2rem] p-5 backdrop-blur-xl shadow-[0_8px_16px_-6px_rgba(0,0,0,0.3)]">
-              <textarea placeholder="Type your message here..." rows="4" class="w-full bg-black/20 border border-white/5 rounded-xl py-3 px-4 text-white placeholder:text-zinc-600 focus:outline-none focus:border-rose-500/50 transition-colors resize-none"></textarea>
-              <button (click)="sendNotification()" class="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-rose-500/20">Send to All Users</button>
+              <input type="text" [value]="newNotificationTitle()" (input)="newNotificationTitle.set($any($event.target).value)" placeholder="Notification Title" class="w-full bg-black/20 border border-white/5 rounded-xl py-3 px-4 text-white placeholder:text-zinc-600 focus:outline-none focus:border-rose-500/50 transition-colors">
+              <textarea [value]="newNotificationMessage()" (input)="newNotificationMessage.set($any($event.target).value)" placeholder="Type your message here..." rows="4" class="w-full bg-black/20 border border-white/5 rounded-xl py-3 px-4 text-white placeholder:text-zinc-600 focus:outline-none focus:border-rose-500/50 transition-colors resize-none"></textarea>
+              <button (click)="createNotification()" class="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-rose-500/20">Send to All Users</button>
+            </div>
+          </div>
+          <div class="mt-8">
+            <h3 class="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-4">Manage Notifications</h3>
+            <div class="flex flex-col gap-3">
+              @for (notification of notifications(); track notification.id) {
+                <div class="bg-white/5 border border-white/5 rounded-2xl p-4 flex justify-between items-start">
+                  <div>
+                    <h4 class="text-white font-bold text-sm">{{ notification.title }}</h4>
+                    <p class="text-zinc-400 text-xs mt-1">{{ notification.message }}</p>
+                    <span class="text-zinc-600 text-[10px] mt-2 block">{{ notification.date | date:'short' }}</span>
+                  </div>
+                  <button (click)="deleteNotification(notification.id)" class="text-rose-500 hover:text-rose-400 p-2">
+                    <mat-icon class="text-[18px] w-[18px] h-[18px]">delete</mat-icon>
+                  </button>
+                </div>
+              }
             </div>
           </div>
         }
