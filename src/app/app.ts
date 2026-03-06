@@ -20,6 +20,7 @@ export class App implements OnInit, OnDestroy {
   totalBalance = signal(0);
   toastMessage = signal<string | null>(null);
   telegramUser = signal<any>(null);
+  isDemoMode = signal(false);
   selectedToken = signal<any>(null);
   transactions = signal<any[]>([]);
   leaderboard = signal([
@@ -43,6 +44,8 @@ export class App implements OnInit, OnDestroy {
   tokenTab = signal('1H');
   showReceiveQR = signal(false);
   showWithdrawModal = signal(false);
+  showTokenSelectModal = signal(false);
+  pendingAction = signal<string | null>(null);
   withdrawAddress = signal('');
   withdrawAmount = signal('');
   
@@ -256,10 +259,7 @@ export class App implements OnInit, OnDestroy {
     { id: 3, title: 'Invite 5 Friends', reward: '+100 NBX', action: 'Invite', completed: false, type: 'referral' },
   ]);
 
-  friendsList = signal([
-    { id: 1, name: 'Alice W.', joinedAt: '2 days ago', reward: '+50 NBX', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alice' },
-    { id: 2, name: 'Bob M.', joinedAt: '5 days ago', reward: '+50 NBX', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bob' },
-  ]);
+  friendsList = signal<any[]>([]);
 
   async ngOnInit() {
     await this.initTelegramUser();
@@ -287,17 +287,27 @@ export class App implements OnInit, OnDestroy {
     if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
       tgUser = window.Telegram.WebApp.initDataUnsafe.user;
       window.Telegram.WebApp.expand();
+      this.isDemoMode.set(false);
     } else {
+      this.isDemoMode.set(true);
       // Mock user for browser testing
       tgUser = {
-        id: '123456789',
-        username: 'HAMIM07X',
-        first_name: 'Hamim',
-        photo_url: 'https://picsum.photos/seed/avatar/96/96'
+        id: 'demo_12345',
+        username: 'DemoUser',
+        first_name: 'Demo',
+        photo_url: 'https://picsum.photos/seed/avatar/96/96',
+        balance: 1000,
+        transactions: []
       };
+      this.telegramUser.set(tgUser);
+      this.evmWallet.set({ address: '0xDemoWalletAddress1234567890abcdef' });
+      this.showToast('Running in Demo Mode');
+      return; // Do not call backend in demo mode
     }
 
     try {
+      const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param || null;
+      
       const response = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -305,7 +315,8 @@ export class App implements OnInit, OnDestroy {
           telegramId: tgUser.id.toString(),
           username: tgUser.username,
           firstName: tgUser.first_name,
-          photoUrl: tgUser.photo_url
+          photoUrl: tgUser.photo_url,
+          referredBy: startParam
         })
       });
       
@@ -314,6 +325,7 @@ export class App implements OnInit, OnDestroy {
       const data = await response.json();
       this.telegramUser.set(data.user);
       this.transactions.set(data.user.transactions || []);
+      this.friendsList.set(data.user.referrals_data || []);
       if (data.wallet) {
         this.evmWallet.set(data.wallet);
         this.fetchEvmBalance(data.wallet.address);
@@ -446,13 +458,11 @@ export class App implements OnInit, OnDestroy {
 
   handleAction(action: string, token?: any) {
     let targetToken = token || this.selectedToken();
+    
     if (!targetToken) {
-      if (action === 'Pay') {
-        targetToken = this.tokens().find(t => t.id === 'nbx');
-      } else {
-        // Default to ETH for general actions if no token is selected
-        targetToken = this.tokens().find(t => t.id === 'eth');
-      }
+      this.pendingAction.set(action);
+      this.showTokenSelectModal.set(true);
+      return;
     }
     
     if (action === 'Withdraw' || action === 'Send' || action === 'Pay') {
@@ -473,6 +483,15 @@ export class App implements OnInit, OnDestroy {
     }
     
     this.showToast(`${action} feature coming soon!`);
+  }
+
+  selectTokenForAction(token: any) {
+    this.showTokenSelectModal.set(false);
+    const action = this.pendingAction();
+    if (action) {
+      this.handleAction(action, token);
+      this.pendingAction.set(null);
+    }
   }
 
   async estimateGas() {

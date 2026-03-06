@@ -63,7 +63,7 @@ app.use(express.json());
 
 // API: Authenticate Telegram User
 app.post('/api/auth', (req, res) => {
-  const { telegramId, username, firstName, photoUrl } = req.body;
+  const { telegramId, username, firstName, photoUrl, referredBy } = req.body;
   if (!telegramId) {
     res.status(400).json({ error: 'Telegram ID required' });
     return;
@@ -73,13 +73,47 @@ app.post('/api/auth', (req, res) => {
   let user = db.users[telegramId];
 
   if (!user) {
-    user = { telegram_id: telegramId, username, first_name: firstName, photo_url: photoUrl, balance: 0, created_at: new Date().toISOString(), transactions: [] };
+    user = { 
+      telegram_id: telegramId, 
+      username, 
+      first_name: firstName, 
+      photo_url: photoUrl, 
+      balance: 0, 
+      created_at: new Date().toISOString(), 
+      transactions: [],
+      referred_by: referredBy || null,
+      referrals: []
+    };
     db.users[telegramId] = user;
+    
+    // Handle referral logic
+    if (referredBy && db.users[referredBy] && referredBy !== telegramId) {
+      if (!db.users[referredBy].referrals) {
+        db.users[referredBy].referrals = [];
+      }
+      db.users[referredBy].referrals.push(telegramId);
+      
+      // Give referral reward
+      db.users[referredBy].balance += 50; // 50 NBX reward
+      if (!db.users[referredBy].transactions) db.users[referredBy].transactions = [];
+      db.users[referredBy].transactions.unshift({
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+        tokenId: 'nbx',
+        type: 'earn',
+        amount: 50,
+        title: `Referral Reward (${firstName})`,
+        date: new Date().toISOString()
+      });
+    }
+    
     writeDB(db);
   }
 
   if (!user.transactions) {
     user.transactions = [];
+  }
+  if (!user.referrals) {
+    user.referrals = [];
   }
 
   // Generate EVM Wallet if not exists
@@ -95,6 +129,19 @@ app.post('/api/auth', (req, res) => {
 
   const userWallet = { address: db.wallets[telegramId].address };
   const completedTasks = db.user_tasks[telegramId] || [];
+  
+  const referralsData = (user.referrals || []).map((refId: string) => {
+    const refUser = db.users[refId];
+    return {
+      id: refId,
+      name: refUser?.first_name || 'Unknown',
+      joinedAt: new Date(refUser?.created_at || Date.now()).toLocaleDateString(),
+      reward: '+50 NBX',
+      avatar: refUser?.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${refId}`
+    };
+  });
+  
+  user.referrals_data = referralsData;
 
   res.json({ user, completedTasks, wallet: userWallet });
 });
