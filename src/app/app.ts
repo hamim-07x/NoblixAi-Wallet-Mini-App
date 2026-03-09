@@ -17,6 +17,14 @@ declare global {
 })
 export class App implements OnInit, OnDestroy {
   activeTab = signal('wallet');
+  walletView = signal<'main' | 'deposit-menu' | 'deposit-select-asset' | 'deposit-details'>('main');
+  menuView = signal<'main' | 'language' | 'theme' | 'timezone' | 'currency' | 'privacy'>('main');
+  selectedDepositAsset = signal<any>(null);
+  theme = signal('Auto');
+  timeZone = signal('UTC');
+  walletCurrency = signal('USD');
+  assetFilter = signal<'all' | 'hide-small' | 'hide-zero'>('all');
+  showAssetFilterModal = signal(false);
   totalBalance = signal(0);
   toastMessage = signal<string | null>(null);
   telegramUser = signal<any>(null);
@@ -53,19 +61,13 @@ export class App implements OnInit, OnDestroy {
   notifications = signal<any[]>([]);
   tokenTab = signal('1H');
   showReceiveQR = signal(false);
-  showWithdrawModal = signal(false);
   showTokenSelectModal = signal(false);
   pendingAction = signal<string | null>(null);
-  withdrawAddress = signal('');
-  withdrawAmount = signal('');
   
   showNbxTransferModal = signal(false);
   nbxTransferToId = signal('');
   nbxTransferAmount = signal<number | null>(null);
-  estimatedGasFee = signal<string>('0.00');
-  isEstimatingGas = signal(false);
   
-  evmWallet = signal<any>(null);
   private priceInterval: any;
   
   exchangeRates = { USD: 1, EUR: 0.92, INR: 83.5, BDT: 110.0 };
@@ -238,6 +240,12 @@ export class App implements OnInit, OnDestroy {
     return this.translations[this.currentLanguage()][key] || key;
   }
   
+  changeLanguage(code: 'en' | 'hi' | 'bn' | 'ru') {
+    this.currentLanguage.set(code);
+    const langName = this.languages.find(l => l.code === code)?.name || code;
+    this.showToast('Language changed to ' + langName);
+  }
+  
   tokens = signal([
     { id: 'btc', name: 'Bitcoin', symbol: 'BTC', balance: 0.00000000, price: 70949, change24h: 2.4, imgUrl: 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png' },
     { id: 'eth', name: 'Ethereum', symbol: 'ETH', balance: 0.00000000, price: 3500.36, change24h: -1.2, imgUrl: 'https://assets.coingecko.com/coins/images/279/small/ethereum.png' },
@@ -251,7 +259,14 @@ export class App implements OnInit, OnDestroy {
   ]);
 
   sortedTokens = computed(() => {
-    return [...this.tokens()].sort((a, b) => {
+    let tokens = [...this.tokens()];
+    const filter = this.assetFilter();
+    if (filter === 'hide-zero') {
+      tokens = tokens.filter(t => t.balance > 0);
+    } else if (filter === 'hide-small') {
+      tokens = tokens.filter(t => (t.balance * t.price) >= 1);
+    }
+    return tokens.sort((a, b) => {
       const valA = a.balance * a.price;
       const valB = b.balance * b.price;
       if (valA !== valB) return valB - valA;
@@ -270,13 +285,6 @@ export class App implements OnInit, OnDestroy {
   async ngOnInit() {
     await this.initTelegramUser();
     this.fetchNotifications();
-    this.fetchLivePrices();
-    this.priceInterval = setInterval(() => {
-      this.fetchLivePrices();
-      if (this.evmWallet()) {
-        this.fetchEvmBalance(this.evmWallet().address);
-      }
-    }, 30000);
   }
 
   ngOnDestroy() {
@@ -286,6 +294,7 @@ export class App implements OnInit, OnDestroy {
   }
 
   async fetchNotifications() {
+    if (typeof window === 'undefined') return;
     try {
       const response = await fetch('/api/notifications');
       if (response.ok) {
@@ -298,6 +307,7 @@ export class App implements OnInit, OnDestroy {
   }
 
   async createNotification() {
+    if (typeof window === 'undefined') return;
     if (!this.newNotificationTitle() || !this.newNotificationMessage()) return;
     try {
       const response = await fetch('/api/notifications', {
@@ -320,6 +330,7 @@ export class App implements OnInit, OnDestroy {
   }
 
   async deleteNotification(id: string) {
+    if (typeof window === 'undefined') return;
     try {
       const response = await fetch(`/api/notifications/${id}`, {
         method: 'DELETE'
@@ -355,7 +366,6 @@ export class App implements OnInit, OnDestroy {
         transactions: []
       };
       this.telegramUser.set(tgUser);
-      this.evmWallet.set({ address: '0xDemoWalletAddress1234567890abcdef' });
       this.showToast('Running in Demo Mode');
       return; // Do not call backend in demo mode
     }
@@ -381,10 +391,6 @@ export class App implements OnInit, OnDestroy {
       this.telegramUser.set(data.user);
       this.transactions.set(data.user.transactions || []);
       this.friendsList.set(data.user.referrals_data || []);
-      if (data.wallet) {
-        this.evmWallet.set(data.wallet);
-        this.fetchEvmBalance(data.wallet.address);
-      }
       
       // Update NBX balance from DB
       this.tokens.update(tokens => tokens.map(t => 
@@ -397,99 +403,9 @@ export class App implements OnInit, OnDestroy {
       ));
       
       this.calculateTotalBalance();
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to authenticate with backend', e);
-      this.showToast('Failed to load user data');
-    }
-  }
-
-  async fetchEvmBalance(address: string) {
-    try {
-      const response = await fetch(`/api/wallet/balance?telegramId=${this.telegramUser().id}`);
-      if (response.ok) {
-        const data = await response.json();
-        this.tokens.update(tokens => {
-          const ethToken = tokens.find(t => t.id === 'eth');
-          if (ethToken) {
-            return tokens.map(t => t.id === 'eth' ? { ...t, balance: parseFloat(data.balance) } : t);
-          } else {
-            return [...tokens, { id: 'eth', name: 'Ethereum (Base)', symbol: 'ETH', balance: parseFloat(data.balance), price: 3500, change24h: 0, imgUrl: 'https://assets.coingecko.com/coins/images/279/small/ethereum.png' }];
-          }
-        });
-        this.calculateTotalBalance();
-      }
-    } catch (e) {
-      console.error('Failed to fetch EVM balance', e);
-    }
-  }
-
-  async withdrawEvm() {
-    if (!this.withdrawAddress() || !this.withdrawAmount()) {
-      this.showToast('Please enter address and amount');
-      return;
-    }
-    
-    this.showToast('Processing transaction...');
-    try {
-      const response = await fetch('/api/wallet/withdraw', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          telegramId: this.telegramUser().id.toString(),
-          toAddress: this.withdrawAddress(),
-          amount: this.withdrawAmount(),
-          tokenSymbol: this.selectedToken()?.symbol
-        })
-      });
-      
-      const data = await response.json();
-      if (data.success) {
-        this.showToast('Withdrawal successful!');
-        this.showWithdrawModal.set(false);
-        this.withdrawAddress.set('');
-        this.withdrawAmount.set('');
-        this.fetchEvmBalance(this.evmWallet().address);
-      } else {
-        this.showToast(data.error || 'Withdrawal failed');
-      }
-    } catch (e) {
-      this.showToast('Network error during withdrawal');
-    }
-  }
-
-  async fetchLivePrices() {
-    try {
-      const response = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbols=["BTCUSDT","ETHUSDT","TONUSDT"]');
-      const data = await response.json();
-      
-      const priceMap: Record<string, { price: number, change: number }> = {};
-      data.forEach((item: any) => {
-        priceMap[item.symbol] = {
-          price: parseFloat(item.lastPrice),
-          change: parseFloat(item.priceChangePercent)
-        };
-      });
-      
-      this.tokens.update(currentTokens => {
-        return currentTokens.map(token => {
-          if (token.id === 'btc' && priceMap['BTCUSDT']) {
-            token.price = priceMap['BTCUSDT'].price;
-            token.change24h = priceMap['BTCUSDT'].change;
-          }
-          if (token.id === 'eth' && priceMap['ETHUSDT']) {
-            token.price = priceMap['ETHUSDT'].price;
-            token.change24h = priceMap['ETHUSDT'].change;
-          }
-          if (token.id === 'ton' && priceMap['TONUSDT']) {
-            token.price = priceMap['TONUSDT'].price;
-            token.change24h = priceMap['TONUSDT'].change;
-          }
-          return token;
-        });
-      });
-      this.calculateTotalBalance();
-    } catch (error) {
-      console.error('Failed to fetch live prices', error);
+      this.showToast('Failed to load user data: ' + (e.message || 'Unknown error'));
     }
   }
 
@@ -507,6 +423,21 @@ export class App implements OnInit, OnDestroy {
     return this.currencySymbols[this.currentCurrency() as keyof typeof this.currencySymbols] || '$';
   }
 
+  selectDepositAsset(asset: any) {
+    this.selectedDepositAsset.set(asset);
+    this.walletView.set('deposit-details');
+  }
+
+  copyToClipboard(text: string) {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => {
+        this.showToast('Copied to clipboard!');
+      }).catch(() => {
+        this.showToast('Failed to copy');
+      });
+    }
+  }
+
   setTab(tab: string) {
     this.activeTab.set(tab);
   }
@@ -514,6 +445,11 @@ export class App implements OnInit, OnDestroy {
   handleAction(action: string, token?: any) {
     let targetToken = token || this.selectedToken();
     
+    if (action === 'Trade') {
+      this.showToast('Trade is currently unavailable');
+      return;
+    }
+
     if (!targetToken) {
       this.pendingAction.set(action);
       this.showTokenSelectModal.set(true);
@@ -526,8 +462,7 @@ export class App implements OnInit, OnDestroy {
         this.showNbxTransferModal.set(true);
         return;
       }
-      this.selectedToken.set(targetToken);
-      this.showWithdrawModal.set(true);
+      this.showToast(`Withdrawal unavailable`);
       return;
     }
     
@@ -549,39 +484,8 @@ export class App implements OnInit, OnDestroy {
     }
   }
 
-  async estimateGas() {
-    if (!this.withdrawAddress() || !this.withdrawAmount()) {
-      this.estimatedGasFee.set('0.00');
-      return;
-    }
-    this.isEstimatingGas.set(true);
-    try {
-      const response = await fetch('/api/wallet/estimate-gas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          toAddress: this.withdrawAddress(),
-          amount: this.withdrawAmount()
-        })
-      });
-      const data = await response.json();
-      this.estimatedGasFee.set(data.feeEth || '0.00');
-    } catch (e) {
-      this.estimatedGasFee.set('0.000021');
-    } finally {
-      this.isEstimatingGas.set(false);
-    }
-  }
-
-  onWithdrawInput() {
-    // Debounce gas estimation
-    if ((window as any).gasTimeout) clearTimeout((window as any).gasTimeout);
-    (window as any).gasTimeout = setTimeout(() => {
-      this.estimateGas();
-    }, 500);
-  }
-
   async transferNbx() {
+    if (typeof window === 'undefined') return;
     if (!this.nbxTransferToId() || !this.nbxTransferAmount()) {
       this.showToast('Please enter Telegram ID and Amount');
       return;
@@ -616,6 +520,7 @@ export class App implements OnInit, OnDestroy {
   }
 
   async completeTask(task: any) {
+    if (typeof window === 'undefined') return;
     if (task.completed) return;
     
     const user = this.telegramUser();
@@ -670,13 +575,6 @@ export class App implements OnInit, OnDestroy {
     return nbx ? nbx.balance : 0;
   }
 
-  copyAddress() {
-    if (this.evmWallet()) {
-      navigator.clipboard.writeText(this.evmWallet().address);
-      this.showToast('Wallet address copied!');
-    }
-  }
-
   copyReferralLink() {
     const link = `https://t.me/NoblixBot?start=${this.telegramUser()?.id || 'demo'}`;
     navigator.clipboard.writeText(link).then(() => {
@@ -692,6 +590,10 @@ export class App implements OnInit, OnDestroy {
   }
 
   handleWalletAction(action: string) {
+    if (action === 'Deposit') {
+      this.walletView.set('deposit-menu');
+      return;
+    }
     if (action === 'Language') {
       this.showLanguageModal.set(true);
       return;
