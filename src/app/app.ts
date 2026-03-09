@@ -29,6 +29,7 @@ export class App implements OnInit, OnDestroy {
   toastMessage = signal<string | null>(null);
   telegramUser = signal<any>(null);
   isDemoMode = signal(false);
+  isTelegramEnv = signal(true);
   selectedToken = signal<any>(null);
   transactions = signal<any[]>([]);
   leaderboard = signal([
@@ -350,11 +351,19 @@ export class App implements OnInit, OnDestroy {
     let tgUser = null;
     
     // Check if running inside Telegram WebApp
-    if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
-      tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+    if (window.Telegram?.WebApp && window.Telegram.WebApp.initData) {
+      window.Telegram.WebApp.ready();
       window.Telegram.WebApp.expand();
-      this.isDemoMode.set(false);
-    } else {
+      
+      if (window.Telegram.WebApp.initDataUnsafe?.user) {
+        tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+        this.isDemoMode.set(false);
+        this.isTelegramEnv.set(true);
+      }
+    }
+
+    if (!tgUser) {
+      this.isTelegramEnv.set(false);
       this.isDemoMode.set(true);
       // Mock user for browser testing
       tgUser = {
@@ -366,7 +375,6 @@ export class App implements OnInit, OnDestroy {
         transactions: []
       };
       this.telegramUser.set(tgUser);
-      this.showToast('Running in Demo Mode');
       return; // Do not call backend in demo mode
     }
 
